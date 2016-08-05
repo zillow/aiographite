@@ -24,3 +24,10 @@ def distribute(build):
         "python", "setup.py",
         "sdist", "bdist_wheel", "--universal", "upload"
     ])
+
+
+def build_docs(build):
+    build.packages.install("sphinx")
+    return subprocess.call(
+        ["make", "html"], cwd=os.path.join(build.root, "docs")
+    )
