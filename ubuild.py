@@ -13,9 +13,7 @@ def test(build):
     build.packages.install("pytest-asyncio")
     pytest = os.path.join(build.root, "bin", "py.test")
     subprocess.call([
-        pytest, "--cov", "aiographite",
-        "aiographite/tests",
-        "--cov-report", "term-missing"
+        pytest, "aiographite/tests"
     ] + build.options.args)
 
 
