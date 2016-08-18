@@ -403,12 +403,13 @@ def send_valid_dataset_dic(dataset, timestamp):
 	self.send_valid_dataset_dic(dataset, timestamp)
 
 
+
 def destory():
 	"""
 		Close TCP connection and destory the instance
 	"""
 	global aiographite_send_instance
-	if aiographite_send_instance is None:
+	if not aiographite_send_instance:
 		return False
 	aiographite_send_instance.disconnect()
 	aiographite_send_instance = None
@@ -416,9 +417,16 @@ def destory():
 
 
 
+
 def _dummy_message_plaintext_formate():
 	print("Message formate for plaintext protocol")
 	print("Metric1 Value TimeStamp1\n Metric2 Value2 Timestamp2")
+
+
+
+def _dummy_message_pickle_formate():
+	print("Message formate for pickle protocol")
+	print("[(path1, (timestamp1, value1)), (path2, (timestamp2, value2)), ...]")
 
 
 
@@ -429,6 +437,8 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
+
 
 
 
