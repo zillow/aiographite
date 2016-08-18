@@ -188,7 +188,7 @@ class AsyncioGraphiteSendService(object):
 				listOfPlaintext: ["metric1 value1 timestamp1", "metric2 value2 timestamp2", ...]
 				type: List of String
 		"""
-		return "\n".join(listOfPlaintext)
+		return "".join(listOfPlaintext)
 
 
 
@@ -208,7 +208,8 @@ class AsyncioGraphiteSendService(object):
 			@return: required data formate when sending data through 'plaintext' protocol
 			@return_type: String
 		"""
-		return " ".join([metric, value, timestamp])
+		formatted_data = " ".join([metric, value, timestamp])
+		return formatted_data + "\n"
 
 
 
