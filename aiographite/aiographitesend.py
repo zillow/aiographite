@@ -108,7 +108,7 @@ class AsyncioGraphiteSendService(object):
 			@timestamp: int
 			Send a single data(metric value timestamp) to graphite
 		"""
-        timestamp = int(time.time()) if timestamp is None else int(timestamp)
+		timestamp = int(time.time()) if timestamp is None else int(timestamp)
 		message = ""
 		if self.protocol == "plaintext":
 			message = plaintext_protocol_formatted_data(metric, value, timestamp)
@@ -245,34 +245,34 @@ class AsyncioGraphiteSendService(object):
         """
         	Close the TCP connection 
         """
-        try:
-            self.socket.shutdown(1)
-        except AttributeError:
-            self.socket = None
-        except Exception:
-            self.socket = None
-        finally:
-            self.socket = None
+		try:
+		    self.socket.shutdown(1)
+		except AttributeError:
+		    self.socket = None
+		except Exception:
+		    self.socket = None
+		finally:
+		    self.socket = None
 
 
 
 	def to_graphite_valid_metric_name(self, metric_dir_list):
-	"""
-		@purpose:
-			Make metric name valid for graphite in case that the metric name includes 
-			any special character which is not supported by Graphite
-		@example: 
-			Assuming that 
+		"""
+			@purpose:
+				Make metric name valid for graphite in case that the metric name includes 
+				any special character which is not supported by Graphite
+			@example: 
+				Assuming that 
 
-				Expected_Metric_Name  =  metaccounts.authentication.password.attempted
+					Expected_Metric_Name  =  metaccounts.authentication.password.attempted
 
-			Then input metric_dir_list should be
+				Then input metric_dir_list should be
 
-				metric_dir_list = [metaccounts, authentication, password, attempted]
+					metric_dir_list = [metaccounts, authentication, password, attempted]
 
-		@metric_dir_list: List of String
-	"""
-	return "."join([metrics_name_to_graphite(dir_name) for dir_name in metric_dir_list])
+			@metric_dir_list: List of String
+		"""
+		return "."join([metrics_name_to_graphite(dir_name) for dir_name in metric_dir_list])
 
 #########################################################
 #########################################################
