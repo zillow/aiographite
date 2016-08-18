@@ -40,7 +40,7 @@ class AsyncioGraphiteSendService(object):
 			Connect to Graphite Server based on Provided Server Address
 		"""
 		self.socket = socket.socket()
-		self.socket.setblocking(false)
+		self.socket.setblocking(False)
 		try:
 			self.socket.create_connection(self.graphite_server_address)
 		except InterruptedError, e:
@@ -73,9 +73,20 @@ class AsyncioGraphiteSendService(object):
 
 	def send_single_data(self, metric_dir_list, value, timestamp = None):
 		"""
+			@example: 
+				Assuming that 
+
+					Expected_Metric_Name  =  metaccounts.authentication.password.attempted
+
+				Then input metric_dir_list should be
+
+					metric_dir_list = [metaccounts, authentication, password, attempted]
+
 			@metric_dir_list: List of string
 			@timestamp: the type should be int
+
 			If you're very confident that the metric name is valid, then use <method: send_single_valid_data> instead.
+
 		"""		
 		valid_metric_name = to_graphite_valid_metric_name(metric_dir_list)
 		self.send_single_valid_data(valid_metric_name, value, timestamp)
@@ -87,6 +98,7 @@ class AsyncioGraphiteSendService(object):
 			@param: dataset = [(metric1, value1), (metric2, value2), ...]
 
 			If you're very confident that the metric name is valid, then use <method: send_valie_dataset_list> instead.
+
 		"""
 		valid_dataset = [(to_graphite_valid_metric_name(metric), value) for metric, value in dataset]
 		send_valid_dataset_list(valid_dataset, timestamp)
@@ -238,22 +250,71 @@ class AsyncioGraphiteSendService(object):
             self.socket = None
 
 
+
 #########################################################
 #########################################################
 #########################################################
 
+# Module Instance Variable
 aiographite_send_instance = None
 
 def init(graphite_server, graphite_port = DEFAULT_GRAPHITE_PICKLE_PORT, protocol_type = 'pickle'):
+	global aiographite_send_instance
+	if aiographite_send_instance is not None:
+		destory()
+
+	# Check Init Protocol Type
+	if protocol_type not in SUPPORT_PROTOCOLS:
+		raise AioGraphiteSendException("%s is not Support Protocol Type!", protocol_type)
+
+	# Construct an aiographite sending service instance
+	aiographite_send_instance = AsyncioGraphiteSendService(graphite_server, graphite_port, protocol_type)
+	return aiographite_send_instance
 
 
-def send_single_data():
+
+def send_single_data(metric_dir_list, value, timestamp = None):
+	"""
+		@example: 
+			Assuming that 
+
+				Expected_Metric_Name  =  metaccounts.authentication.password.attempted
+
+			Then input metric_dir_list should be
+
+				metric_dir_list = [metaccounts, authentication, password, attempted]
+
+		@metric_dir_list: List of string
+		@timestamp: the type should be int
+
+		If you're very confident that the metric name is valid, then use <method: send_single_valid_data> instead.
+
+		"""		
+	global aiographite_send_instance
+
+	if aiographite_send_instance is None:
+		raise AioGraphiteSendException("Must call init before use!")
+
+	# Sending data
+	aiographite_send_instance.send_single_data(metric_dir_list, value, timestamp)
 
 
-def send_valid_single_data():
+def send_single_valid_data(metric, value, timestamp = None):
+	"""
+		@metric: metric name, type: String
+		@timestamp: type should be int
+	"""
+	global aiographite_send_instance
+
+	if aiographite_send_instance is None:
+		raise AioGraphiteSendException("Must call init before use!")
+
+	# Sending data
+	aiographite_send_instance.send_single_valid_data(metric, value, timestamp)
 
 
-def send_data_list():
+def send_data_list(dataset, timestamp = None):
+	
 
 
 def send_valid_data_list():
@@ -263,12 +324,15 @@ def send_valid_data_dic():
 
 
 def destory():
-
-
-def reset():
-	
-
-
+	"""
+		Close TCP connection and destory the instance
+	"""
+	global aiographite_send_instance
+	if aiographite_send_instance is None:
+		return False
+	aiographite_send_instance.disconnect()
+	aiographite_send_instance = None
+	return True
 
 
 
