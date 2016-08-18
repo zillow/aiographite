@@ -52,24 +52,6 @@ class AsyncioGraphiteSendService(object):
 		return self.socket
 
 
-	def to_graphite_valid_metric_name(self, metric_dir_list):
-		"""
-			@purpose:
-				Make metric name valid for graphite in case that the metric name includes 
-				any special character which is not supported by Graphite
-			@example: 
-				Assuming that 
-
-					Expected_Metric_Name  =  metaccounts.authentication.password.attempted
-
-				Then input metric_dir_list should be
-
-					metric_dir_list = [metaccounts, authentication, password, attempted]
-
-			@metric_dir_list: List of String
-		"""
-		return "."join([metrics_name_to_graphite(dir_name) for dir_name in metric_dir_list])
-
 
 	def send_single_data(self, metric_dir_list, value, timestamp = None):
 		"""
@@ -88,26 +70,42 @@ class AsyncioGraphiteSendService(object):
 			If you're very confident that the metric name is valid, then use <method: send_single_valid_data> instead.
 
 		"""		
-		valid_metric_name = to_graphite_valid_metric_name(metric_dir_list)
+		valid_metric_name = self.to_graphite_valid_metric_name(metric_dir_list)
 		self.send_single_valid_data(valid_metric_name, value, timestamp)
 
 
 
 	def send_dataset_list(self, dataset, timestamp = None):
 		"""
-			@param: dataset = [(metric1, value1), (metric2, value2), ...]
+			@param: 
+				Support two kinds of dataset
 
-			If you're very confident that the metric name is valid, then use <method: send_valie_dataset_list> instead.
+				1)	dataset = [(metric_dir_list, value1), (metric_dir_list, value2), ...] 
+
+				or 
+
+				2)	dataset = [(metric_dir_list1, value1, timestamp1), (metric_dir_list1, value2, timestamp2), ...]
+
+			If you're very confident that the metric name is valid, then use <method: send_valid_dataset_list> instead.
 
 		"""
-		valid_dataset = [(to_graphite_valid_metric_name(metric), value) for metric, value in dataset]
-		send_valid_dataset_list(valid_dataset, timestamp)
+		if not dataset:
+			return 
+
+		if len(dataset[0]) == 2:
+			valid_dataset = [(self.to_graphite_valid_metric_name(metric_dir_list), value) for metric_dir_list, value in dataset]
+		else:
+			valid_dataset = [(self.to_graphite_valid_metric_name(metric_dir_list), value, timestamp) for metric_dir_list, value, timestamp in dataset]
+
+		self.send_valid_dataset_list(valid_dataset, timestamp)
 
 
 
 	def send_single_valid_data(self, metric, value, timestamp = None):
 		"""
-			@timestamp: the type should be int
+			@metric: String
+			@value: int
+			@timestamp: int
 			Send a single data(metric value timestamp) to graphite
 		"""
         timestamp = int(time.time()) if timestamp is None else int(timestamp)
@@ -117,7 +115,7 @@ class AsyncioGraphiteSendService(object):
 		else:
 			listOfMetricTuples = [pickle_protocol_formatted_data(metric, value, timestamp)]
 			message = generate_message_for_pickle(listOfMetricTuples)
-		loop.run_until_complete(asyncio.ensure_future(self.send_message(message)))
+		self.loop.run_until_complete(asyncio.ensure_future(self.send_message(message)))
 
 
 
@@ -136,20 +134,27 @@ class AsyncioGraphiteSendService(object):
 		# 1. plaintext
 		# 2. pickle
 		if self.protocol == "plaintext":
-			message = generate_message_for_data_list(dataset, timestamp, plaintext_protocol_formatted_data, generate_message_for_plaintext)
+			message = self.generate_message_for_data_list(dataset, timestamp, self.plaintext_protocol_formatted_data, self.generate_message_for_plaintext)
 		else:
-			message = generate_message_for_data_list(dataset, timestamp, pickle_protocol_formatted_data, generate_message_for_pickle)
+			message = self.generate_message_for_data_list(dataset, timestamp, self.pickle_protocol_formatted_data, self.generate_message_for_pickle)
 
-		# Sending
-		loop.run_until_complete(asyncio.ensure_future(self.send_message(message)))
+		# Sending Data
+		self.loop.run_until_complete(asyncio.ensure_future(self.send_message(message)))
 
 
 
 	def send_valid_dataset_dict(self, dataset, timestamp = None):
 		"""
 			Send data to graphite server when incoming data is in 'dict' format
-			@param: dataset = {metric1 : value1, metric2 : value2, ...}
+			@param: dataset = {
+									metric1 : value1,      // type ( string: int )
+									metric2 : value2, 
+									...
+							  }
+
+			metric1 (metric2, ...) are valid metric name for Graphite
 		"""
+		self.send_valid_dataset_list(dataset.items(), timestamp)
 
 
 
@@ -251,6 +256,24 @@ class AsyncioGraphiteSendService(object):
 
 
 
+	def to_graphite_valid_metric_name(self, metric_dir_list):
+	"""
+		@purpose:
+			Make metric name valid for graphite in case that the metric name includes 
+			any special character which is not supported by Graphite
+		@example: 
+			Assuming that 
+
+				Expected_Metric_Name  =  metaccounts.authentication.password.attempted
+
+			Then input metric_dir_list should be
+
+				metric_dir_list = [metaccounts, authentication, password, attempted]
+
+		@metric_dir_list: List of String
+	"""
+	return "."join([metrics_name_to_graphite(dir_name) for dir_name in metric_dir_list])
+
 #########################################################
 #########################################################
 #########################################################
@@ -258,9 +281,11 @@ class AsyncioGraphiteSendService(object):
 # Module Instance Variable
 aiographite_send_instance = None
 
+
+
 def init(graphite_server, graphite_port = DEFAULT_GRAPHITE_PICKLE_PORT, protocol_type = 'pickle'):
 	global aiographite_send_instance
-	if aiographite_send_instance is not None:
+	if aiographite_send_instance:
 		destory()
 
 	# Check Init Protocol Type
@@ -289,14 +314,15 @@ def send_single_data(metric_dir_list, value, timestamp = None):
 
 		If you're very confident that the metric name is valid, then use <method: send_single_valid_data> instead.
 
-		"""		
+	"""		
 	global aiographite_send_instance
 
-	if aiographite_send_instance is None:
+	if not aiographite_send_instance:
 		raise AioGraphiteSendException("Must call init before use!")
 
 	# Sending data
 	aiographite_send_instance.send_single_data(metric_dir_list, value, timestamp)
+
 
 
 def send_single_valid_data(metric, value, timestamp = None):
@@ -306,21 +332,75 @@ def send_single_valid_data(metric, value, timestamp = None):
 	"""
 	global aiographite_send_instance
 
-	if aiographite_send_instance is None:
+	if not aiographite_send_instance:
 		raise AioGraphiteSendException("Must call init before use!")
 
 	# Sending data
 	aiographite_send_instance.send_single_valid_data(metric, value, timestamp)
 
 
+
 def send_data_list(dataset, timestamp = None):
-	
+	"""
+		@param: 
+			Support two kinds of dataset
+
+			1)	dataset = [(metric_dir_list, value1), (metric_dir_list, value2), ...] 
+
+			or 
+
+			2)	dataset = [(metric_dir_list1, value1, timestamp1), (metric_dir_list1, value2, timestamp2), ...]
+
+		If you're very confident that the metric name is valid, then use <method: send_valid_dataset_list> instead.
+
+		"""
+	global aiographite_send_instance
+
+	if not aiographite_send_instance:
+		raise AioGraphiteSendException("Must call init before use!")
+
+	# Sending Data
+	aiographite_send_instance.send_dataset_list(dataset, timestamp)
 
 
-def send_valid_data_list():
+
+def send_valid_dataset_list(dataset, timestamp = None):
+	"""
+		@param: 
+		Support two kinds of dataset
+			1)	dataset = [(metric1, value1), (metric2, value2), ...] 
+			or 
+			2)	dataset = [(metric1, value1, timestamp1), (metric2, value2, timestamp2), ...]
+	"""
+
+	global aiographite_send_instance
+
+	if not aiographite_send_instance:
+		raise AioGraphiteSendException("Must call init before use!")
+
+	# Sending Data
+	self.send_valid_dataset_list(dataset, timestamp)
 
 
-def send_valid_data_dic():
+
+def send_valid_dataset_dic(dataset, timestamp):
+	"""
+		Send data to graphite server when incoming data is in 'dict' format
+		@param: dataset = {
+								metric1 : value1,      // type ( string: int )
+								metric2 : value2, 
+								...
+						  }
+
+		metric1 (metric2, ...) are valid name for Graphite
+	"""
+	global aiographite_send_instance
+
+	if not aiographite_send_instance:
+		raise AioGraphiteSendException("Must call init before use!")
+
+	# Sending Data
+	self.send_valid_dataset_dic(dataset, timestamp)
 
 
 def destory():
@@ -333,8 +413,6 @@ def destory():
 	aiographite_send_instance.disconnect()
 	aiographite_send_instance = None
 	return True
-
-
 
 
 
