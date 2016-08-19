@@ -399,9 +399,9 @@ def send_valid_dataset_dic(dataset, timestamp):
 
 
 
-def destory():
+def destroy():
 	"""
-		Close TCP connection and destory the instance
+		Close TCP connection and destroy the instance
 	"""
 	global aiographite_send_instance
 	if not aiographite_send_instance:
