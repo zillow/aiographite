@@ -71,7 +71,7 @@ class AsyncioGraphiteSendService(object):
 			@param: 
 				Support two kinds of dataset
 
-				1)	dataset = [(metric_dir_list, value1), (metric_dir_list, value2), ...] 
+				1)	dataset = [(metric_dir_list1, value1), (metric_dir_list2, value2), ...] 
 
 				or 
 
@@ -102,10 +102,10 @@ class AsyncioGraphiteSendService(object):
 		timestamp = int(time.time()) if timestamp is None else int(timestamp)
 		message = ""
 		if self.protocol == "plaintext":
-			message = plaintext_protocol_formatted_data(metric, value, timestamp)
+			message = self.plaintext_protocol_formatted_data(metric, value, timestamp)
 		else:
-			listOfMetricTuples = [pickle_protocol_formatted_data(metric, value, timestamp)]
-			message = generate_message_for_pickle(listOfMetricTuples)
+			listOfMetricTuples = [self.pickle_protocol_formatted_data(metric, value, timestamp)]
+			message = self.generate_message_for_pickle(listOfMetricTuples)
 		self.loop.run_until_complete(asyncio.ensure_future(self.send_message(message)))
 
 
