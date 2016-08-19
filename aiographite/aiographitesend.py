@@ -247,6 +247,14 @@ class AsyncioGraphiteSendService(object):
 			self.socket = None
 
 
+	def close_event_loop(self):
+		"""
+			Close Event Loop. 
+			No call should be made after event loop closed
+		"""
+		self.loop.close()
+
+
 
 	def to_graphite_valid_metric_name(self, metric_dir_list):
 		"""
@@ -407,6 +415,7 @@ def destroy():
 	if not aiographite_send_instance:
 		return False
 	aiographite_send_instance.disconnect()
+	aiographite_send_instance.close_event_loop()
 	aiographite_send_instance = None
 	return True
 
