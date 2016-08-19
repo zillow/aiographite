@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import urllib
+import urllib.parse
 
 """
 	Graphite expects everything to be just ASCII to split/processing them, and then make directories based on metric name.
@@ -45,7 +45,7 @@ import urllib
 	For special characters :
 	1. 	The dot (.) is a special character because it delineates each metric’s path component, 
 		but this is an easy fix; just substitute all dots for underscores or '%2E'. 
-		For example, www.zillow.com => www_zillow_com
+		For example, www.zillow.com => www_zillow_com / www%2Ezillow%2Ecom
 	2   For the rest of the special characters(except dot), just URL any metric name with 
 		special characters to make it valid for Graphite, and then URL decode it when we need to
 		reconstruct the information
@@ -63,8 +63,8 @@ def metrics_name_to_graphite(section_name):
 	"""
 	valid_graphite_metric_name = ""
 	try:
-		valid_graphite_metric_name = urllib.quote(unicode(section_name, 'utf-8').encode('idna')).replace(".", "%2E")
-	except Exception, e:
+		valid_graphite_metric_name = urllib.parse.quote(section_name.encode('idna')).replace(".", "%2E")
+	except Exception as e:
 		raise e
 	return valid_graphite_metric_name
 	
@@ -76,23 +76,23 @@ def metrics_name_from_graphite(idna_str):
 	"""
 	display_metric_name = ""
 	try:
-		display_metric_name = urllib.unquote(idna_str).decode('idna').encode('utf-8')
-	except Exception, e:
+		display_metric_name = bytes(urllib.parse.unquote(idna_str), 'utf-8').decode('idna')
+	except Exception as e:
 		raise e
 	return display_metric_name
 
 
 def dummy_data():
-	print '=== This is a simple example ===='
+	print('=== This is a simple example ====')
 	name = 'sproc performance.test*feature_velocity@zillow.com hello world'
-	print name
-	print '=== Convert to Graphite valid metric name >>>'
+	print(name)
+	print('=== Convert to Graphite valid metric name >>>')
 	to_graphite = metrics_name_to_graphite(name)
-	print to_graphite
-	print '=== Convert the Graphite valid metric name back to the original name >>>'
+	print(to_graphite)
+	print('=== Convert the Graphite valid metric name back to the original name >>>')
 	from_graphite = metrics_name_from_graphite(to_graphite)
-	print from_graphite
-	print '============= Test Consistency ===============', name == from_graphite
+	print(from_graphite)
+	print('============= Test Consistency ===============', name == from_graphite)
 
 def main():
 	dummy_data()
