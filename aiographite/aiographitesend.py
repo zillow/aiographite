@@ -33,16 +33,13 @@ class AsyncioGraphiteSendService(object):
 		"""
 			Connect to Graphite Server based on Provided Server Address
 		"""
-		self.socket = socket.socket()
-		self.socket.setblocking(False)
 		try:
-			self.socket.create_connection(self.graphite_server_address)
-		except InterruptedError as e:
-			raise e
+			self.socket = socket.create_connection(self.graphite_server_address)
+			self.socket.setblocking(False)
 		except socket.gaierror:
 			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" % self.graphite_server_address)
 		except Exception as e:
-			raise AioGraphiteSendException("Unexpected exception while connecting to %s:%s" % self.graphite_server_address)
+			raise e
 		return self.socket
 
 
