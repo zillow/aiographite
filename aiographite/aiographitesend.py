@@ -1,5 +1,5 @@
 import asyncio
-from graphite_escaping import metrics_name_to_graphite, metrics_name_from_graphite
+from aiographite.graphite_escaping import metrics_name_to_graphite, metrics_name_from_graphite
 import pickle
 import struct
 import socket
@@ -19,19 +19,13 @@ class AioGraphiteSendException(Exception):
 class AsyncioGraphiteSendService(object):
 
 	def __init__(self, graphite_server, graphite_port, protocol = "pickle"):
-		"""
-			Must call __init__ before use
-		"""
-		# Graphite Server Address
+
 		self.graphite_server_address = (graphite_server, graphite_port)
 
-		# Connect to Graphite Server
 		self.connect_to_graphite()
 
-		# protocol
 		self.protocol = protocol
 
-		# Get Event Loop
 		self.loop = asyncio.get_event_loop()
 
 
@@ -43,11 +37,11 @@ class AsyncioGraphiteSendService(object):
 		self.socket.setblocking(False)
 		try:
 			self.socket.create_connection(self.graphite_server_address)
-		except InterruptedError, e:
+		except InterruptedError as e:
 			raise e
 		except socket.gaierror:
 			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" % self.graphite_server_address)
-		except Exception, e:
+		except Exception as e:
 			raise AioGraphiteSendException("Unexpected exception while connecting to %s:%s" % self.graphite_server_address)
 		return self.socket
 
@@ -236,24 +230,24 @@ class AsyncioGraphiteSendService(object):
 				total_sent = total_sent + sent
 			except socket.gaierror as e:
 				raise AioGraphiteSendException("Fail to send data to %s, Error: %s" % (self.graphite_server_address, e)) 
-			except Exception, e:
+			except Exception as e:
 				raise AioGraphiteSendException("Unexpected exception while sending data to %s:%s" % self.graphite_server_address)
 		return total_sent
 
 
 
 	def disconnect(self):
-        """
-        	Close the TCP connection 
-        """
+		"""
+			Close the TCP connection 
+		"""
 		try:
-		    self.socket.shutdown(1)
+			self.socket.shutdown(1)
 		except AttributeError:
-		    self.socket = None
+			self.socket = None
 		except Exception:
-		    self.socket = None
+			self.socket = None
 		finally:
-		    self.socket = None
+			self.socket = None
 
 
 
@@ -273,7 +267,7 @@ class AsyncioGraphiteSendService(object):
 
 			@metric_dir_list: List of String
 		"""
-		return "."join([metrics_name_to_graphite(dir_name) for dir_name in metric_dir_list])
+		return ".".join([metrics_name_to_graphite(dir_name) for dir_name in metric_dir_list])
 
 #########################################################
 #########################################################
