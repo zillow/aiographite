@@ -199,7 +199,7 @@ class AsyncioGraphiteSendService(object):
 			@return: required data formate when sending data through 'plaintext' protocol
 			@return_type: String
 		"""
-		formatted_data = " ".join([metric, value, timestamp])
+		formatted_data = " ".join([metric, str(value), str(timestamp)])
 		return formatted_data + "\n"
 
 
@@ -221,14 +221,14 @@ class AsyncioGraphiteSendService(object):
 		message_size = len(message)
 		while total_sent < message_size:
 			try:
-				sent = self.socket.send(message[total_sent:])
+				sent = self.socket.send(message[total_sent:].encode('ascii'))
 				if sent == 0:
 					raise RuntimeError("socket connection broken")
 				total_sent = total_sent + sent
 			except socket.gaierror as e:
 				raise AioGraphiteSendException("Fail to send data to %s, Error: %s" % (self.graphite_server_address, e)) 
 			except Exception as e:
-				raise AioGraphiteSendException("Unexpected exception while sending data to %s:%s" % self.graphite_server_address)
+				raise e
 		return total_sent
 
 
@@ -266,9 +266,12 @@ class AsyncioGraphiteSendService(object):
 		"""
 		return ".".join([metrics_name_to_graphite(dir_name) for dir_name in metric_dir_list])
 
+
+
 #########################################################
 #########################################################
 #########################################################
+
 
 # Module Instance Variable
 aiographite_send_instance = None
@@ -278,7 +281,7 @@ aiographite_send_instance = None
 def init(graphite_server, graphite_port = DEFAULT_GRAPHITE_PICKLE_PORT, protocol_type = 'pickle'):
 	global aiographite_send_instance
 	if aiographite_send_instance:
-		destory()
+		destroy()
 
 	# Check Init Protocol Type
 	if protocol_type not in SUPPORT_PROTOCOLS:
@@ -406,7 +409,6 @@ def destroy():
 	aiographite_send_instance.disconnect()
 	aiographite_send_instance = None
 	return True
-
 
 
 
