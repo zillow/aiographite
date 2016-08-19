@@ -6,30 +6,37 @@ import unittest
 DEFAULT_GRAPHITE_PLAINTEXT_PORT = 2003
 DEFAULT_GRAPHITE_PICKLE_PORT = 2004
 
-@pytest.fixture(scope="class")
-def graphite_server_plaintext():
-	server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	server.bind(('localhost', DEFAULT_GRAPHITE_PLAINTEXT_PORT))
-	server.listen(5)
-	return server
-
-
-@pytest.fixture
-def graphite_send_instance():
-	return aiographitesend.init('localhost', DEFAULT_GRAPHITE_PLAINTEXT_PORT, 'plaintext')
 
 
 
-@pytest.mark.parametrize("metric, value, timestamp", [
-	('zillow', 123, 89071),
-	('velocity', 234, 9875),
-	('rental', 124, 4533)
-])
-def test_pickle_protocol_formatted_data(metric, value, timestamp, graphite_send_instance):
-	assert graphite_send_instance.pickle_protocol_formatted_data(metric, value, timestamp) == (metric, (timestamp, value))
+class TestAsyncioGraphiteSendService(unittest.TestCase):
+	def setup_class(cls):
+		cls.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		cls.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		cls.server.bind(('localhost', DEFAULT_GRAPHITE_PLAINTEXT_PORT))
+		cls.server.listen(5)
 
+	def teardown_class(cls):
+		"""
+			1. Destroy aiographite_send instance
+			2. Close the server socket
+		"""
+		aiographitesend.destroy()
 
-# @pytest.mark.usefixtures("graphite_server_plaintext")
-# class TestAsyncioGraphiteSendService(unittest.TestCase):
-# 	def test_connec
+		try:
+			cls.server.shutdown(socket.SHUT_RD)
+			cls.server.close()
+		except Exception:
+			pass
+		cls.server = None
+
+		@pytest.mark.parametrize("metric, value, timestamp", [
+		('zillow', 123, 89071),
+		('velocity', 234, 9875),
+		('rental', 124, 4533)
+		])
+		@pytest.mark.usefixtures("graphite_server_plaintext")
+		def test_pickle_protocol_formatted_data(metric, value, timestamp):
+			graphite_send_instance = aiographitesend.init('localhost', DEFAULT_GRAPHITE_PLAINTEXT_PORT, 'plaintext')
+			assert graphite_send_instance.pickle_protocol_formatted_data(metric, value, timestamp) == (metric, (timestamp, value))
+
