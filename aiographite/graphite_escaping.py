@@ -53,33 +53,36 @@ import urllib.parse
 
 
 
+class GraphiteEncoder:
+	# Naming Metrics:
+	# <section_name>.<section_name>.<section_name>.<section_name>
+	@staticmethod
+	def encode(section_name):
+		"""
+			@param:   Section Name  (could include any character)
+			@return:  valid metric name for graphite
+		"""
+		valid_graphite_metric_name = ""
+		try:
+			valid_graphite_metric_name = urllib.parse.quote(section_name.encode('idna')).replace(".", "%2E")
+		except Exception as e:
+			raise e
+		return valid_graphite_metric_name
+		
+	@staticmethod
+	def decode(idna_str):
+		"""
+			@param: valid metric name of graphite
+			@return: the original name
+		"""
+		display_metric_name = ""
+		try:
+			display_metric_name = bytes(urllib.parse.unquote(idna_str), 'utf-8').decode('idna')
+		except Exception as e:
+			raise e
+		return display_metric_name
 
-# Naming Metrics:
-# <section_name>.<section_name>.<section_name>.<section_name>
-def metrics_name_to_graphite(section_name):
-	"""
-		@param:   Section Name  (could include any character)
-		@return:  valid metric name for graphite
-	"""
-	valid_graphite_metric_name = ""
-	try:
-		valid_graphite_metric_name = urllib.parse.quote(section_name.encode('idna')).replace(".", "%2E")
-	except Exception as e:
-		raise e
-	return valid_graphite_metric_name
-	
 
-def metrics_name_from_graphite(idna_str):
-	"""
-		@param: valid metric name of graphite
-		@return: the original name
-	"""
-	display_metric_name = ""
-	try:
-		display_metric_name = bytes(urllib.parse.unquote(idna_str), 'utf-8').decode('idna')
-	except Exception as e:
-		raise e
-	return display_metric_name
 
 
 def dummy_data():
@@ -87,10 +90,10 @@ def dummy_data():
 	name = 'sproc performance.test*feature_velocity@zillow.com hello world'
 	print(name)
 	print('=== Convert to Graphite valid metric name >>>')
-	to_graphite = metrics_name_to_graphite(name)
+	to_graphite = GraphiteEncoder.encode(name)
 	print(to_graphite)
 	print('=== Convert the Graphite valid metric name back to the original name >>>')
-	from_graphite = metrics_name_from_graphite(to_graphite)
+	from_graphite = GraphiteEncoder.decode(to_graphite)
 	print(from_graphite)
 	print('============= Test Consistency ===============', name == from_graphite)
 

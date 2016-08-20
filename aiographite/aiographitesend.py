@@ -1,5 +1,5 @@
 import asyncio
-from aiographite.graphite_escaping import metrics_name_to_graphite, metrics_name_from_graphite
+from aiographite.graphite_escaping import GraphiteEncoder
 import pickle
 import struct
 import socket
@@ -62,10 +62,9 @@ class PickleProtocol(object):
 
 
 
-
 class AIOGraphite(object):
 
-	def __init__(self, graphite_server, graphite_port, protocol = PickleProtocol()):
+	def __init__(self, graphite_server, graphite_port = DEFAULT_GRAPHITE_PICKLE_PORT, protocol = PickleProtocol(), loop = None):
 
 		self._graphite_server_address = (graphite_server, graphite_port)
 
@@ -73,11 +72,12 @@ class AIOGraphite(object):
 
 		self.protocol = protocol
 
-		self.loop = asyncio.get_event_loop()
+		self.loop = loop or asyncio.get_event_loop()
 
 
 
-	def send_single_data(self, metric_dir_list: List[str], value: int, timestamp = None):
+	@asyncio.coroutine
+	async def send_single_metric(self, metric_dir_list: List[str], value: int, timestamp = None):
 		"""
 			@example: 
 				Assuming that 
@@ -95,11 +95,12 @@ class AIOGraphite(object):
 
 		"""		
 		valid_metric_name = self._to_graphite_valid_metric_name(metric_dir_list)
-		self.send_single_valid_data(valid_metric_name, value, timestamp)
+		self.send_single_valid_metric(valid_metric_name, value, timestamp)
 
 
 
-	def send_dataset_list(self, dataset:List[Tuple] , timestamp = None):
+	@asyncio.coroutine
+	async def send_metric_list(self, dataset:List[Tuple] , timestamp = None):
 		"""
 			@param: 
 				Support two kinds of dataset
@@ -121,11 +122,12 @@ class AIOGraphite(object):
 		else:
 			valid_dataset = [(self._to_graphite_valid_metric_name(metric_dir_list), value, timestamp) for metric_dir_list, value, timestamp in dataset]
 
-		self.send_valid_dataset_list(valid_dataset, timestamp)
+		self.send_valid_metric_list(valid_dataset, timestamp)
 
 
 
-	def send_single_valid_data(self, metric: str, value: int, timestamp = None):
+	@asyncio.coroutine
+	async def send_single_valid_metric(self, metric: str, value: int, timestamp = None):
 		"""
 			@metric: String
 			@value: int
@@ -139,11 +141,12 @@ class AIOGraphite(object):
 		message = self.protocol.generate_message_function(listOfMetricTuples)
 
 		# Sending Data
-		self.loop.run_until_complete(asyncio.ensure_future(self._send_message(message)))
+		await self._send_message(message)
 
 
 
-	def send_valid_dataset_list(self, dataset: List[Tuple], timestamp = None):
+	@asyncio.coroutine
+	async def send_valid_metric_list(self, dataset: List[Tuple], timestamp = None):
 		"""
 			@param: 
 			Support two kinds of dataset
@@ -157,11 +160,12 @@ class AIOGraphite(object):
 		message = self._generate_message_for_data_list(dataset, timestamp, self.protocol.data_formate_function, self.protocol.generate_message_function)
 
 		# Sending Data
-		self.loop.run_until_complete(asyncio.ensure_future(self._send_message(message)))
+		await self._send_message(message)
 
 
 
-	def send_valid_dataset_dict(self, dataset: Dict, timestamp = None):
+	@asyncio.coroutine
+	async def send_valid_metric_dict(self, dataset: Dict, timestamp = None):
 		"""
 			Send data to graphite server when incoming data is in 'dict' format
 			@param: dataset = {
@@ -172,31 +176,46 @@ class AIOGraphite(object):
 
 			metric1 (metric2, ...) are valid metric name for Graphite
 		"""
-		self.send_valid_dataset_list(dataset.items(), timestamp)
+		self.send_valid_metric_list(dataset.items(), timestamp)
 
 
 
-	def disconnect(self):
-	"""
-		Close the TCP connection 
-	"""
-	try:
-		self.socket.shutdown(1)
-	except AttributeError:
-		self.socket = None
-	except Exception:
-		self.socket = None
-	finally:
-		self.socket = None
+	@asyncio.coroutine
+	async def disconnect(self):
+		"""
+			Close the TCP connection 
+		"""
+		try:
+			self.writer.close()
+		except AttributeError:
+			self.writer = None
+		except Exception:
+			self.writer = None
+		finally:
+			self.writer = None
 
 
 
-	def close_event_loop(self):
+	@asyncio.coroutine
+	async def close_event_loop(self):
 		"""
 			Close Event Loop. 
 			No call should be made after event loop closed
 		"""
 		self.loop.close()
+
+
+	@asyncio.coroutine
+	async def _connect_to_graphite(self):
+		"""
+			Connect to Graphite Server based on Provided Server Address
+		"""
+		try:
+			self.reader, self.writer = await asyncio.open_connection(self._graphite_server_address, loop = self.loop)
+		except socket.gaierror:
+			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" % self._graphite_server_address)
+		except Exception as e:
+			raise e
 
 
 
@@ -205,19 +224,8 @@ class AIOGraphite(object):
 		"""
 			@message: data ready to sent to graphite server
 		"""
-		total_sent = 0
-		message_size = len(message)
-		while total_sent < message_size:
-			try:
-				sent = yield from self.socket.send(message[total_sent:])
-				if sent == 0:
-					raise RuntimeError("socket connection broken")
-				total_sent = total_sent + sent
-			except socket.gaierror as e:
-				raise AioGraphiteSendException("Fail to send data to %s, Error: %s" % (self._graphite_server_address, e)) 
-			except Exception as e:
-				raise e
-		return total_sent
+		self.writer.write(message)
+		await self.writer.drain()
 
 
 
@@ -243,7 +251,7 @@ class AIOGraphite(object):
 		return message	
 
 
-		
+
 	def _to_graphite_valid_metric_name(self, metric_dir_list: List[str]):
 		"""
 			@purpose:
@@ -260,22 +268,10 @@ class AIOGraphite(object):
 
 			@metric_dir_list: List of String
 		"""
-		return ".".join([metrics_name_to_graphite(dir_name) for dir_name in metric_dir_list])
+		return ".".join([GraphiteEncoder.encode(dir_name) for dir_name in metric_dir_list])
 
 
 
-	def _connect_to_graphite(self):
-		"""
-			Connect to Graphite Server based on Provided Server Address
-		"""
-		try:
-			self.socket = socket.create_connection(self._graphite_server_address)
-			self.socket.setblocking(False)
-		except socket.gaierror:
-			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" % self._graphite_server_address)
-		except Exception as e:
-			raise e
-		return self.socket
 
 
 #########################################################

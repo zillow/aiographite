@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from aiographite.graphite_escaping import metrics_name_to_graphite, metrics_name_from_graphite
+from aiographite.graphite_escaping import GraphiteEncoder
 
 
 @pytest.mark.parametrize("name", [
@@ -17,4 +17,4 @@ from aiographite.graphite_escaping import metrics_name_to_graphite, metrics_name
     '汉 字.汉*字'
 ])
 def test_consistency(name):
-	assert metrics_name_from_graphite(metrics_name_to_graphite(name)) == name
+	assert GraphiteEncoder.decode(GraphiteEncoder.encode(name)) == name
