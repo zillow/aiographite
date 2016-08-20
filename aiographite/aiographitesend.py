@@ -5,6 +5,7 @@ import struct
 import socket
 import os
 import time
+from typing import Dict, Tuple, List
 
 
 DEFAULT_GRAPHITE_PLAINTEXT_PORT = 2003
@@ -16,35 +17,67 @@ class AioGraphiteSendException(Exception):
     pass
 
 
-class AsyncioGraphiteSendService(object):
+class PlaintextProtocol(object):
 
-	def __init__(self, graphite_server, graphite_port, protocol = "pickle"):
+	def data_formate_function(self, metric: str, value: int, timestamp: int):
+		"""
+			@return: required data formate when sending data through 'plaintext' protocol
+			@return_type: String
+		"""
+		formatted_data = " ".join([metric, str(value), str(timestamp)])
+		return formatted_data + "\n"
 
-		self.graphite_server_address = (graphite_server, graphite_port)
 
-		self.connect_to_graphite()
+	def generate_message_function(self, listOfPlaintext: List[str]):
+		"""
+			return the required message formate for protocol 'plaintext'
+			@param: 
+				listOfPlaintext: ["metric1 value1 timestamp1", "metric2 value2 timestamp2", ...]
+				type: List of String
+		"""
+		return "".join(listOfPlaintext).encode('ascii')
+		
+
+
+class PickleProtocol(object):
+
+	def data_formate_function(self, metric: str, value: int, timestamp: int):
+		"""
+			@return: required data formate when sending data through 'pickle' protocol
+			@return_type: Tuple
+		"""		
+		return (metric, (timestamp, value))	
+
+
+	def generate_message_function(self, listOfMetricTuples: List[Tuple]):
+		"""
+			@param: 
+				listOfMetricTuples: [(metric1, (timestamp1, value1), (metric2, (timestamp2, value2), ...]
+		"""
+		payload = pickle.dumps(listOfMetricTuples, protocol=2)
+		header = struct.pack("!L", len(payload))
+		message = header + payload
+		return message
+
+
+
+
+
+class AIOGraphite(object):
+
+	def __init__(self, graphite_server, graphite_port, protocol = PickleProtocol()):
+
+		self._graphite_server_address = (graphite_server, graphite_port)
+
+		self._connect_to_graphite()
 
 		self.protocol = protocol
 
 		self.loop = asyncio.get_event_loop()
 
 
-	def connect_to_graphite(self):
-		"""
-			Connect to Graphite Server based on Provided Server Address
-		"""
-		try:
-			self.socket = socket.create_connection(self.graphite_server_address)
-			self.socket.setblocking(False)
-		except socket.gaierror:
-			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" % self.graphite_server_address)
-		except Exception as e:
-			raise e
-		return self.socket
 
-
-
-	def send_single_data(self, metric_dir_list, value, timestamp = None):
+	def send_single_data(self, metric_dir_list: List[str], value: int, timestamp = None):
 		"""
 			@example: 
 				Assuming that 
@@ -61,12 +94,12 @@ class AsyncioGraphiteSendService(object):
 			If you're very confident that the metric name is valid, then use <method: send_single_valid_data> instead.
 
 		"""		
-		valid_metric_name = self.to_graphite_valid_metric_name(metric_dir_list)
+		valid_metric_name = self._to_graphite_valid_metric_name(metric_dir_list)
 		self.send_single_valid_data(valid_metric_name, value, timestamp)
 
 
 
-	def send_dataset_list(self, dataset, timestamp = None):
+	def send_dataset_list(self, dataset:List[Tuple] , timestamp = None):
 		"""
 			@param: 
 				Support two kinds of dataset
@@ -84,33 +117,33 @@ class AsyncioGraphiteSendService(object):
 			return 
 
 		if len(dataset[0]) == 2:
-			valid_dataset = [(self.to_graphite_valid_metric_name(metric_dir_list), value) for metric_dir_list, value in dataset]
+			valid_dataset = [(self._to_graphite_valid_metric_name(metric_dir_list), value) for metric_dir_list, value in dataset]
 		else:
-			valid_dataset = [(self.to_graphite_valid_metric_name(metric_dir_list), value, timestamp) for metric_dir_list, value, timestamp in dataset]
+			valid_dataset = [(self._to_graphite_valid_metric_name(metric_dir_list), value, timestamp) for metric_dir_list, value, timestamp in dataset]
 
 		self.send_valid_dataset_list(valid_dataset, timestamp)
 
 
 
-	def send_single_valid_data(self, metric, value, timestamp = None):
+	def send_single_valid_data(self, metric: str, value: int, timestamp = None):
 		"""
 			@metric: String
 			@value: int
 			@timestamp: int
 			Send a single data(metric value timestamp) to graphite
 		"""
-		timestamp = int(time.time()) if timestamp is None else int(timestamp)
-		message = ""
-		if self.protocol == "plaintext":
-			message = self.plaintext_protocol_formatted_data(metric, value, timestamp)
-		else:
-			listOfMetricTuples = [self.pickle_protocol_formatted_data(metric, value, timestamp)]
-			message = self.generate_message_for_pickle(listOfMetricTuples)
-		self.loop.run_until_complete(asyncio.ensure_future(self.send_message(message)))
+		timestamp = int(timestamp or time.time())
+
+		# Generate message based on protocol
+		listOfMetricTuples = [self.protocol.data_formate_function(metric, value, timestamp)]
+		message = self.protocol.generate_message_function(listOfMetricTuples)
+
+		# Sending Data
+		self.loop.run_until_complete(asyncio.ensure_future(self._send_message(message)))
 
 
 
-	def send_valid_dataset_list(self, dataset, timestamp = None):
+	def send_valid_dataset_list(self, dataset: List[Tuple], timestamp = None):
 		"""
 			@param: 
 			Support two kinds of dataset
@@ -118,23 +151,17 @@ class AsyncioGraphiteSendService(object):
 				or 
 				2)	dataset = [(metric1, value1, timestamp1), (metric2, value2, timestamp2), ...]
 		"""
-		timestamp = int(time.time()) if timestamp is None else int(timestamp)
-		message = ""
+		timestamp = int(timestamp or time.time())
 
 		# Generate message based on protocol
-		# 1. plaintext
-		# 2. pickle
-		if self.protocol == "plaintext":
-			message = self.generate_message_for_data_list(dataset, timestamp, self.plaintext_protocol_formatted_data, self.generate_message_for_plaintext)
-		else:
-			message = self.generate_message_for_data_list(dataset, timestamp, self.pickle_protocol_formatted_data, self.generate_message_for_pickle)
+		message = self._generate_message_for_data_list(dataset, timestamp, self.protocol.data_formate_function, self.protocol.generate_message_function)
 
 		# Sending Data
-		self.loop.run_until_complete(asyncio.ensure_future(self.send_message(message)))
+		self.loop.run_until_complete(asyncio.ensure_future(self._send_message(message)))
 
 
 
-	def send_valid_dataset_dict(self, dataset, timestamp = None):
+	def send_valid_dataset_dict(self, dataset: Dict, timestamp = None):
 		"""
 			Send data to graphite server when incoming data is in 'dict' format
 			@param: dataset = {
@@ -149,7 +176,52 @@ class AsyncioGraphiteSendService(object):
 
 
 
-	def generate_message_for_data_list(self, dataset, timestamp, formate_function, generate_message_function):
+	def disconnect(self):
+	"""
+		Close the TCP connection 
+	"""
+	try:
+		self.socket.shutdown(1)
+	except AttributeError:
+		self.socket = None
+	except Exception:
+		self.socket = None
+	finally:
+		self.socket = None
+
+
+
+	def close_event_loop(self):
+		"""
+			Close Event Loop. 
+			No call should be made after event loop closed
+		"""
+		self.loop.close()
+
+
+
+	@asyncio.coroutine
+	async def _send_message(self, message: str) -> int:
+		"""
+			@message: data ready to sent to graphite server
+		"""
+		total_sent = 0
+		message_size = len(message)
+		while total_sent < message_size:
+			try:
+				sent = yield from self.socket.send(message[total_sent:])
+				if sent == 0:
+					raise RuntimeError("socket connection broken")
+				total_sent = total_sent + sent
+			except socket.gaierror as e:
+				raise AioGraphiteSendException("Fail to send data to %s, Error: %s" % (self._graphite_server_address, e)) 
+			except Exception as e:
+				raise e
+		return total_sent
+
+
+
+	def _generate_message_for_data_list(self, dataset: List[Tuple], timestamp, formate_function, generate_message_function):
 		"""
 			generate proper formatted message 
 			@param:
@@ -168,95 +240,11 @@ class AsyncioGraphiteSendService(object):
 				timestamp = data_timestamp
 			listOfData.append(formate_function(metric, value, timestamp))
 		message =  generate_message_function(listofData)
-		return message
+		return message	
 
 
-
-	def generate_message_for_plaintext(self, listOfPlaintext):
-		"""
-			return the required message formate for protocol 'plaintext'
-			@param: 
-				listOfPlaintext: ["metric1 value1 timestamp1", "metric2 value2 timestamp2", ...]
-				type: List of String
-		"""
-		return "".join(listOfPlaintext)
-
-
-
-	def generate_message_for_pickle(self, listOfMetricTuples):
-		"""
-			@param: 
-				listOfMetricTuples: [(metric1, (timestamp1, value1), (metric2, (timestamp2, value2), ...]
-		"""
-		payload = pickle.dumps(listOfMetricTuples, protocol=2)
-		header = struct.pack("!L", len(payload))
-		message = header + payload
-		return message
-
-
-	def plaintext_protocol_formatted_data(self, metric, value, timestamp):
-		"""
-			@return: required data formate when sending data through 'plaintext' protocol
-			@return_type: String
-		"""
-		formatted_data = " ".join([metric, str(value), str(timestamp)])
-		return formatted_data + "\n"
-
-
-
-	def pickle_protocol_formatted_data(self, metric, value, timestamp):
-		"""
-			@return: required data formate when sending data through 'pickle' protocol
-			@return_type: Tuple
-		"""		
-		return (metric, (timestamp, value))
-
-
-
-	def send_message(self, message):
-		"""
-			@message: data ready to sent to graphite server
-		"""
-		total_sent = 0
-		message_size = len(message)
-		while total_sent < message_size:
-			try:
-				sent = self.socket.send(message[total_sent:].encode('ascii'))
-				if sent == 0:
-					raise RuntimeError("socket connection broken")
-				total_sent = total_sent + sent
-			except socket.gaierror as e:
-				raise AioGraphiteSendException("Fail to send data to %s, Error: %s" % (self.graphite_server_address, e)) 
-			except Exception as e:
-				raise e
-		return total_sent
-
-
-
-	def disconnect(self):
-		"""
-			Close the TCP connection 
-		"""
-		try:
-			self.socket.shutdown(1)
-		except AttributeError:
-			self.socket = None
-		except Exception:
-			self.socket = None
-		finally:
-			self.socket = None
-
-
-	def close_event_loop(self):
-		"""
-			Close Event Loop. 
-			No call should be made after event loop closed
-		"""
-		self.loop.close()
-
-
-
-	def to_graphite_valid_metric_name(self, metric_dir_list):
+		
+	def _to_graphite_valid_metric_name(self, metric_dir_list: List[str]):
 		"""
 			@purpose:
 				Make metric name valid for graphite in case that the metric name includes 
@@ -276,148 +264,23 @@ class AsyncioGraphiteSendService(object):
 
 
 
-#########################################################
-#########################################################
-#########################################################
-
-
-# Module Instance Variable
-aiographite_send_instance = None
-
-
-
-def init(graphite_server, graphite_port = DEFAULT_GRAPHITE_PICKLE_PORT, protocol_type = 'pickle'):
-	global aiographite_send_instance
-	if aiographite_send_instance:
-		destroy()
-
-	# Check Init Protocol Type
-	if protocol_type not in SUPPORT_PROTOCOLS:
-		raise AioGraphiteSendException("%s is not Support Protocol Type!", protocol_type)
-
-	# Construct an aiographite sending service instance
-	aiographite_send_instance = AsyncioGraphiteSendService(graphite_server, graphite_port, protocol_type)
-	return aiographite_send_instance
-
-
-
-def send_single_data(metric_dir_list, value, timestamp = None):
-	"""
-		@example: 
-			Assuming that 
-
-				Expected_Metric_Name  =  metaccounts.authentication.password.attempted
-
-			Then input metric_dir_list should be
-
-				metric_dir_list = [metaccounts, authentication, password, attempted]
-
-		@metric_dir_list: List of string
-		@timestamp: the type should be int
-
-		If you're very confident that the metric name is valid, then use <method: send_single_valid_data> instead.
-
-	"""		
-	global aiographite_send_instance
-
-	if not aiographite_send_instance:
-		raise AioGraphiteSendException("Must call init before use!")
-
-	# Sending data
-	aiographite_send_instance.send_single_data(metric_dir_list, value, timestamp)
-
-
-
-def send_single_valid_data(metric, value, timestamp = None):
-	"""
-		@metric: metric name, type: String
-		@timestamp: type should be int
-	"""
-	global aiographite_send_instance
-
-	if not aiographite_send_instance:
-		raise AioGraphiteSendException("Must call init before use!")
-
-	# Sending data
-	aiographite_send_instance.send_single_valid_data(metric, value, timestamp)
-
-
-
-def send_data_list(dataset, timestamp = None):
-	"""
-		@param: 
-			Support two kinds of dataset
-
-			1)	dataset = [(metric_dir_list, value1), (metric_dir_list, value2), ...] 
-
-			or 
-
-			2)	dataset = [(metric_dir_list1, value1, timestamp1), (metric_dir_list1, value2, timestamp2), ...]
-
-		If you're very confident that the metric name is valid, then use <method: send_valid_dataset_list> instead.
-
+	def _connect_to_graphite(self):
 		"""
-	global aiographite_send_instance
-
-	if not aiographite_send_instance:
-		raise AioGraphiteSendException("Must call init before use!")
-
-	# Sending Data
-	aiographite_send_instance.send_dataset_list(dataset, timestamp)
-
-
-
-def send_valid_dataset_list(dataset, timestamp = None):
-	"""
-		@param: 
-		Support two kinds of dataset
-			1)	dataset = [(metric1, value1), (metric2, value2), ...] 
-			or 
-			2)	dataset = [(metric1, value1, timestamp1), (metric2, value2, timestamp2), ...]
-	"""
-
-	global aiographite_send_instance
-
-	if not aiographite_send_instance:
-		raise AioGraphiteSendException("Must call init before use!")
-
-	# Sending Data
-	self.send_valid_dataset_list(dataset, timestamp)
+			Connect to Graphite Server based on Provided Server Address
+		"""
+		try:
+			self.socket = socket.create_connection(self._graphite_server_address)
+			self.socket.setblocking(False)
+		except socket.gaierror:
+			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" % self._graphite_server_address)
+		except Exception as e:
+			raise e
+		return self.socket
 
 
-
-def send_valid_dataset_dic(dataset, timestamp):
-	"""
-		Send data to graphite server when incoming data is in 'dict' format
-		@param: dataset = {
-								metric1 : value1,      // type ( string: int )
-								metric2 : value2, 
-								...
-						  }
-
-		metric1 (metric2, ...) are valid name for Graphite
-	"""
-	global aiographite_send_instance
-
-	if not aiographite_send_instance:
-		raise AioGraphiteSendException("Must call init before use!")
-
-	# Sending Data
-	self.send_valid_dataset_dic(dataset, timestamp)
-
-
-
-def destroy():
-	"""
-		Close TCP connection and destroy the instance
-	"""
-	global aiographite_send_instance
-	if not aiographite_send_instance:
-		return False
-	aiographite_send_instance.disconnect()
-	aiographite_send_instance.close_event_loop()
-	aiographite_send_instance = None
-	return True
+#########################################################
+#########################################################
+#########################################################
 
 
 
