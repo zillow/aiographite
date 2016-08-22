@@ -1,5 +1,5 @@
 import asyncio
-from aiographite.graphite_escaping import GraphiteEncoder
+from .graphite_escaping import GraphiteEncoder
 import pickle
 import struct
 import socket
@@ -66,9 +66,13 @@ class AIOGraphite(object):
 
 	def __init__(self, graphite_server, graphite_port = DEFAULT_GRAPHITE_PICKLE_PORT, protocol = PickleProtocol(), loop = None):
 
+		self._graphite_server = graphite_server
+
+		self._graphite_port = graphite_port
+
 		self._graphite_server_address = (graphite_server, graphite_port)
 
-		self._connect_to_graphite()
+		self._reader, self._writer = None, None
 
 		self.protocol = protocol
 
@@ -186,13 +190,13 @@ class AIOGraphite(object):
 			Close the TCP connection 
 		"""
 		try:
-			self.writer.close()
+			self._writer.close()
 		except AttributeError:
-			self.writer = None
+			self._writer = None
 		except Exception:
-			self.writer = None
+			self._writer = None
 		finally:
-			self.writer = None
+			self._writer = None
 
 
 
@@ -206,16 +210,20 @@ class AIOGraphite(object):
 
 
 	@asyncio.coroutine
-	async def _connect_to_graphite(self):
+	def connect_to_graphite(self):
 		"""
 			Connect to Graphite Server based on Provided Server Address
 		"""
+		print('Connection Started!')
+
 		try:
-			self.reader, self.writer = await asyncio.open_connection(self._graphite_server_address, loop = self.loop)
+			self._reader, self._writer = yield from asyncio.open_connection(self._graphite_server, self._graphite_port, loop = self.loop)
 		except socket.gaierror:
 			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" % self._graphite_server_address)
 		except Exception as e:
 			raise e
+
+		print('Connection finished!')
 
 
 
@@ -224,8 +232,8 @@ class AIOGraphite(object):
 		"""
 			@message: data ready to sent to graphite server
 		"""
-		self.writer.write(message)
-		await self.writer.drain()
+		self._writer.write(message)
+		await self._writer.drain()
 
 
 
@@ -272,6 +280,20 @@ class AIOGraphite(object):
 
 
 
+	@property
+	def reader(self):
+		return self._reader
+	
+
+	@property
+	def writer(self):
+		return self._writer
+
+	@property
+	def graphite_server_address(self):
+		return self._graphite_server_address
+	
+	
 
 
 #########################################################
