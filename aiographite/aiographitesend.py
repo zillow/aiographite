@@ -214,17 +214,12 @@ class AIOGraphite(object):
 		"""
 			Connect to Graphite Server based on Provided Server Address
 		"""
-		print('Connection Started!')
-
 		try:
 			self._reader, self._writer = yield from asyncio.open_connection(self._graphite_server, self._graphite_port, loop = self.loop)
 		except socket.gaierror:
 			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" % self._graphite_server_address)
 		except Exception as e:
 			raise e
-
-		print('Connection finished!')
-
 
 
 	@asyncio.coroutine
