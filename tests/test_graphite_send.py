@@ -1,8 +1,12 @@
 import pytest
 from aiographite.aiographitesend import AioGraphiteSendException
-from aiographite.aiographitesend import PlaintextProtocol, PickleProtocol
+from aiographite.aiographitesend import PlaintextProtocol, PickleProtocol, AIOGraphite
 import socket
 import unittest
+import asyncio
+from asyncio import test_utils
+
+
 
 DEFAULT_GRAPHITE_PLAINTEXT_PORT = 2003
 DEFAULT_GRAPHITE_PICKLE_PORT = 2004
@@ -104,6 +108,13 @@ def test_generate_message_for_plaintext():
 
 
 
+def test_open_connection():
+	
+	with test_utils.run_test_server() as httpd:
+		loop = asyncio.get_event_loop()
+		plaintext_protocol = PlaintextProtocol()
+		aiographite = AIOGraphite(*httpd.address, plaintext_protocol, loop = loop)
+		loop.run_until_complete(aiographite.connect_to_graphite())
 
 
 
