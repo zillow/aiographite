@@ -6,7 +6,7 @@ import struct
 import socket
 import os
 import time
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Callable
 
 
 DEFAULT_GRAPHITE_PLAINTEXT_PORT = 2003
@@ -36,7 +36,7 @@ class AIOGraphite:
 
 
 	@asyncio.coroutine
-	async def send(self, metric: str, value: int, timestamp = None):
+	async def send(self, metric: str, value: int, timestamp = None) -> None:
 		"""
 			@metric: String, valid metric name for Graphite
 			@value: int
@@ -55,7 +55,7 @@ class AIOGraphite:
 
 
 	@asyncio.coroutine
-	async def send_multiple(self, dataset: List[Tuple], timestamp = None):
+	async def send_multiple(self, dataset: List[Tuple], timestamp = None) -> None:
 		"""
 			@param: 
 			Support two kinds of dataset
@@ -73,7 +73,7 @@ class AIOGraphite:
 
 
 	@asyncio.coroutine
-	async def close_event_loop(self):
+	async def close_event_loop(self) -> None:
 		"""
 			Close Event Loop. 
 			No call should be made after event loop closed
@@ -82,7 +82,7 @@ class AIOGraphite:
 
 
 	@asyncio.coroutine
-	async def connect_to_graphite(self):
+	async def connect_to_graphite(self) -> None:
 		"""
 			Connect to Graphite Server based on Provided Server Address
 		"""
@@ -92,7 +92,7 @@ class AIOGraphite:
 			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" % self._graphite_server_address)
 
 
-	def disconnect(self):
+	def disconnect(self) -> None:
 		"""
 			Close the TCP connection 
 		"""
@@ -125,7 +125,7 @@ class AIOGraphite:
 
 
 	@asyncio.coroutine
-	async def _send_message(self, message: bytes) -> int:
+	async def _send_message(self, message: bytes) -> None:
 		"""
 			@message: data ready to sent to graphite server
 		"""
@@ -133,7 +133,7 @@ class AIOGraphite:
 		await self._writer.drain()
 
 
-	def _generate_message_for_data_list(self, dataset: List[Tuple], timestamp, formate_function, generate_message_function):
+	def _generate_message_for_data_list(self, dataset: List[Tuple], timestamp, formate_function: Callable[[str, int, int], str], generate_message_function: Callable[[List[str]], bytes]) -> bytes:
 		"""
 			generate proper formatted message 
 			@param:
