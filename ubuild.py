@@ -1,20 +1,27 @@
 import os
 import subprocess
+from uranium import task_requires
 
 
 def main(build):
     build.packages.install(".", develop=True)
 
 
+@task_requires("main")
 def test(build):
-    main(build)
     build.packages.install("pytest")
     build.packages.install("pytest-cov")
     build.packages.install("pytest-asyncio")
-    pytest = os.path.join(build.root, "bin", "py.test")
-    subprocess.call([
-        pytest, "aiographite/tests"
+    build.packages.install("radon")
+    build.packages.install("flake8")
+    build.executables.run([
+        "pytest", "./tests",
+        "--cov", "aiographite",
+        "--cov-report", "term-missing",
     ] + build.options.args)
+    build.executables.run([
+        "flake8", "aiographite", "tests"
+    ])
 
 
 def distribute(build):

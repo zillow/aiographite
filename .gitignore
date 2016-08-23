@@ -6,3 +6,6 @@ lib
 *.egg-info
 dist/
 docs/_build
+.cache
+.coverage
+__pycache__
