@@ -34,7 +34,9 @@ class AIOGraphite:
             return
         timestamp = int(timestamp or time.time())
         # Generate message based on protocol
-        listOfMetricTuples = [self.protocol.data_format(metric, value, timestamp)]
+        listOfMetricTuples = [
+            self.protocol.data_format(metric, value, timestamp)
+        ]
         message = self.protocol.generate_message(listOfMetricTuples)
         # Sending Data
         await self._send_message(message)
@@ -42,25 +44,29 @@ class AIOGraphite:
     @asyncio.coroutine
     async def send_multiple(self, dataset: List[Tuple], timestamp=None) -> None:
         """
-            @param: 
+            @param:
             Support two kinds of dataset
-                1)  dataset = [(metric1, value1), (metric2, value2), ...] 
-                or 
-                2)  dataset = [(metric1, value1, timestamp1), (metric2, value2, timestamp2), ...]
+                1)  dataset = [(metric1, value1), (metric2, value2), ...]
+                or
+                2)  dataset = [(metric1, value1, timestamp1), 
+                               (metric2, value2, timestamp2), ...]
         """
         if not dataset:
             return 
         timestamp = int(timestamp or time.time())
         # Generate message based on protocol
-        message = self._generate_message_for_data_list(dataset, 
-            timestamp, self.protocol.data_format, self.protocol.generate_message)
+        message = self._generate_message_for_data_list(
+            dataset,
+            timestamp, 
+            self.protocol.data_format, 
+            self.protocol.generate_message)
         # Sending Data
         await self._send_message(message)
 
     @asyncio.coroutine
     async def close_event_loop(self) -> None:
         """
-            Close Event Loop. 
+            Close Event Loop.
             No call should be made after event loop closed
         """
         self.loop.close()
@@ -71,15 +77,19 @@ class AIOGraphite:
             Connect to Graphite Server based on Provided Server Address
         """
         try:
-            self._reader, self._writer = await asyncio.open_connection(self._graphite_server, 
-                self._graphite_port, loop = self.loop)
+            self._reader, self._writer = await asyncio.open_connection(
+                self._graphite_server,
+                self._graphite_port, 
+                loop=self.loop)
         except socket.gaierror:
-            raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s"
-                % self._graphite_server_address)
+            raise AioGraphiteSendException(
+                "Unable to connect to the provided server address %s:%s"
+                % self._graphite_server_address
+                )
 
     def disconnect(self) -> None:
         """
-            Close the TCP connection 
+            Close the TCP connection
         """
         try:
             self._writer.close()
@@ -87,15 +97,15 @@ class AIOGraphite:
             self._writer = None
         finally:
             self._writer = None
-            self._reader = None 
+            self._reader = None
 
     def clean_and_join_metric_parts(self, metric_parts: List[str]) -> str:
         """
             @purpose:
-                Make metric name valid for graphite in case that the metric name includes 
-                any special character which is not supported by Graphite
-            @example: 
-                Assuming that 
+                Make metric name valid for graphite in case that the metric 
+                name includes any special character which is not supported by Graphite
+            @example:
+                Assuming that
 
                     Expected_Metric_Name  =  metaccounts.authentication.password.attempted
 
@@ -115,14 +125,15 @@ class AIOGraphite:
         self._writer.write(message)
         await self._writer.drain()
 
-    def _generate_message_for_data_list(self, dataset: List[Tuple], timestamp, 
+    def _generate_message_for_data_list(
+                            self, dataset: List[Tuple], timestamp, 
                             formate_function: Callable[[str, int, int], str], 
                             generate_message_function: Callable[[List[str]], bytes]) -> bytes:
         """
-            generate proper formatted message 
+            generate proper formatted message
             @param:
             Support two kinds of dataset
-                1)  dataset = [(metric1, value1), (metric2, value2), ...] 
+                1)  dataset = [(metric1, value1), (metric2, value2), ...]
                 or 
                 2)  dataset = [(metric1, value1, timestamp1), (metric2, value2, timestamp2), ...]
         """
@@ -135,5 +146,5 @@ class AIOGraphite:
                 (metric, value, data_timestamp) = data
                 timestamp = data_timestamp
             listofData.append(formate_function(metric, value, timestamp))
-        message =  generate_message_function(listofData)
+        message = generate_message_function(listofData)
         return message

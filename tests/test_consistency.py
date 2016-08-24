@@ -17,4 +17,4 @@ from aiographite.graphite_encoder import GraphiteEncoder
     '汉 字.汉*字'
 ])
 def test_consistency(name):
-	assert GraphiteEncoder.decode(GraphiteEncoder.encode(name)) == name
+    assert GraphiteEncoder.decode(GraphiteEncoder.encode(name)) == name
