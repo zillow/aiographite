@@ -49,7 +49,7 @@ class AIOGraphite:
             Support two kinds of dataset
                 1)  dataset = [(metric1, value1), (metric2, value2), ...]
                 or
-                2)  dataset = [(metric1, value1, timestamp1), 
+                2)  dataset = [(metric1, value1, timestamp1),
                                (metric2, value2, timestamp2), ...]
         """
         if not dataset:
@@ -104,19 +104,22 @@ class AIOGraphite:
         """
             @purpose:
                 Make metric name valid for graphite in case that the metric
-                name includes any special character which is not supported by Graphite
+                name includes any special character which is not supported
+                by Graphite
             @example:
                 Assuming that
 
-                Expected_Metric_Name  =  metaccounts.authentication.password.attempted
+                Expected_Metric = metaccounts.authentication.password.attempted
 
                 Then input metric_parts should be
 
-                metric_parts = [metaccounts, authentication, password, attempted]
+                metric_parts = [metaccounts,authentication,password,attempted]
 
             @metric_parts: List of String
         """
-        return ".".join([GraphiteEncoder.encode(dir_name) for dir_name in metric_parts])
+        return ".".join([
+                GraphiteEncoder.encode(dir_name) for dir_name in metric_parts
+            ])
 
     @asyncio.coroutine
     async def _send_message(self, message: bytes) -> None:
@@ -129,13 +132,14 @@ class AIOGraphite:
     def _generate_message_for_data_list(
                     self, dataset: List[Tuple], timestamp,
                     formate_function: Callable[[str, int, int], str],
-                    generate_message_function: Callable[[List[str]], bytes]) -> bytes:
+                    generate_message_function: Callable[[List[str]], bytes]
+                    ) -> bytes:
         """
             generate proper formatted message
             @param:
             Support two kinds of dataset
                 1)  dataset = [(metric1, value1), (metric2, value2), ...]
-                or 
+                or
                 2)  dataset = [(metric1, value1, timestamp1),
                                (metric2, value2, timestamp2), ...]
         """
