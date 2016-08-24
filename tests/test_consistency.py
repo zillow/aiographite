@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from aiographite.graphiteencoder import GraphiteEncoder
+from aiographite.graphite_encoder import GraphiteEncoder
 
 
 @pytest.mark.parametrize("name", [
