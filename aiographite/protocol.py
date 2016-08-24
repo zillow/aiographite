@@ -48,23 +48,3 @@ class PickleProtocol:
         header = struct.pack("!L", len(payload))
         message = header + payload
         return message
-
-
-def _dummy_message_plaintext_formate():
-    print("Message formate for plaintext protocol")
-    print("Metric1 Value TimeStamp1\n Metric2 Value2 Timestamp2")
-
-
-def _dummy_message_pickle_formate():
-    print("Message formate for pickle protocol")
-    print("[(path1, (timestamp1, value1)), "
-          "(path2, (timestamp2, value2)), ...]")
-
-
-def main():
-    _dummy_message_plaintext_formate()
-    _dummy_message_pickle_formate()
-
-
-if __name__ == '__main__':
-    main()

@@ -98,7 +98,7 @@ def test_open_connection():
         plaintext_protocol = PlaintextProtocol()
         aiographite = AIOGraphite(*httpd.address,
                                   plaintext_protocol, loop=loop)
-        loop.run_until_complete(aiographite.connect_to_graphite())
+        loop.run_until_complete(aiographite.connect())
         reader = aiographite._reader
         writer = aiographite._writer
         assert reader is not None
@@ -111,7 +111,7 @@ def test_disconnect():
         plaintext_protocol = PlaintextProtocol()
         aiographite = AIOGraphite(*httpd.address,
                                   plaintext_protocol, loop=loop)
-        loop.run_until_complete(aiographite.connect_to_graphite())
+        loop.run_until_complete(aiographite.connect())
         aiographite.disconnect()
         reader = aiographite._reader
         writer = aiographite._writer
@@ -134,7 +134,7 @@ def test_send_message_and_send():
             '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
             plaintext_protocol, loop=loop)
         message = "hello world !"
-        await aiographite.connect_to_graphite()
+        await aiographite.connect()
         await aiographite._send_message(message.encode("ascii"))
         reader = aiographite._reader
         writer = aiographite._writer
@@ -149,7 +149,7 @@ def test_send_message_and_send():
         plaintext_protocol = PlaintextProtocol()
         aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
                                   plaintext_protocol, loop=loop)
-        await aiographite.connect_to_graphite()
+        await aiographite.connect()
         metric = 'sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12'
         value = 3232
         timestamp = 1471640923
@@ -169,7 +169,7 @@ def test_send_message_and_send():
         pickle = PickleProtocol()
         aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
                                   pickle, loop=loop)
-        await aiographite.connect_to_graphite()
+        await aiographite.connect()
         dataset = [('sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12',
                     3233, 1471640923),
                    ('dit_400.zpid%40zillow%2Ecom.EHT%3A%3Adisk_usage_per_host',
