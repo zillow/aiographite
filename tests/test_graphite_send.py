@@ -1,5 +1,5 @@
 import pytest
-from aiographite.aiographitesend import AIOGraphite
+from aiographite.aiographite import AIOGraphite
 from aiographite.protocol import PlaintextProtocol, PickleProtocol
 import asyncio
 from asyncio import test_utils
@@ -16,7 +16,7 @@ DEFAULT_GRAPHITE_PICKLE_PORT = 2004
 ])
 def test_pickle_protocol_formatted_data(metric, value, timestamp):
     pickle = PickleProtocol()
-    data = pickle.data_format(metric, value, timestamp)
+    data = pickle.format_data(metric, value, timestamp)
     expected_data = (metric, (timestamp, value))
     assert data == expected_data
 
@@ -29,7 +29,7 @@ def test_pickle_protocol_formatted_data(metric, value, timestamp):
 def test_plaintext_protocol_formatted_data(metric, value,
                                            timestamp, expected_data):
     plaintext = PlaintextProtocol()
-    data = plaintext.data_format(metric, value, timestamp)
+    data = plaintext.format_data(metric, value, timestamp)
     assert data == expected_data
 
 
@@ -83,7 +83,7 @@ def test_generate_message_for_data_list(metric_value_timestamp_list,
         message = aiographite._generate_message_for_data_list(
             metric_value_timestamp_list,
             timestamp,
-            plaintext_protocol.data_format,
+            plaintext_protocol.format_data,
             plaintext_protocol.generate_message
         )
         expected_message = (
