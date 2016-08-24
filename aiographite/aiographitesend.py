@@ -1,10 +1,6 @@
-from .protocol import PlaintextProtocol, PickleProtocol
 from .graphite_encoder import GraphiteEncoder
 import asyncio
-import pickle
-import struct
 import socket
-import os
 import time
 from typing import Dict, Tuple, List, Callable
 
@@ -67,7 +63,8 @@ class AIOGraphite:
 			return 
 		timestamp = int(timestamp or time.time())
 		# Generate message based on protocol
-		message = self._generate_message_for_data_list(dataset, timestamp, self.protocol.data_format, self.protocol.generate_message)
+		message = self._generate_message_for_data_list(dataset, 
+			timestamp, self.protocol.data_format, self.protocol.generate_message)
 		# Sending Data
 		await self._send_message(message)
 
@@ -87,9 +84,11 @@ class AIOGraphite:
 			Connect to Graphite Server based on Provided Server Address
 		"""
 		try:
-			self._reader, self._writer = await asyncio.open_connection(self._graphite_server, self._graphite_port, loop = self.loop)
+			self._reader, self._writer = await asyncio.open_connection(self._graphite_server, 
+				self._graphite_port, loop = self.loop)
 		except socket.gaierror:
-			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" % self._graphite_server_address)
+			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" 
+				% self._graphite_server_address)
 
 
 	def disconnect(self) -> None:
@@ -133,7 +132,9 @@ class AIOGraphite:
 		await self._writer.drain()
 
 
-	def _generate_message_for_data_list(self, dataset: List[Tuple], timestamp, formate_function: Callable[[str, int, int], str], generate_message_function: Callable[[List[str]], bytes]) -> bytes:
+	def _generate_message_for_data_list(self, dataset: List[Tuple], timestamp, 
+							formate_function: Callable[[str, int, int], str], 
+							generate_message_function: Callable[[List[str]], bytes]) -> bytes:
 		"""
 			generate proper formatted message 
 			@param:
