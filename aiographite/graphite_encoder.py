@@ -11,7 +11,7 @@ import urllib.parse
 
 """
     Naming metrics schema:
-    <namespace>.<instrumented section>.<target (noun)>.<action (past tense verb)>
+    <namespace>.<instrumented section>.<target>.<action>
 """
 
 """
@@ -35,8 +35,8 @@ import urllib.parse
     is unsuitable for the Domain Name System. If given a label containing
     at least one non-ASCII character, ToASCII will apply the Nameprep
     algorithm, which converts the label to lowercase and performs other
-    normalization, and will then translate the result to ASCII using Punycode[16]
-    before prepending the four-character string "xn--".[17] This four-character
+    normalization, and will then translate the result to ASCII using Punycode
+    before prepending the four-character string "xn--". This four-character
     string is called the ASCII Compatible Encoding (ACE) prefix, and is used to
     distinguish Punycode encoded labels from ordinary ASCII labels. The ToASCII
     algorithm can fail in several ways; for example, the final string could
@@ -55,9 +55,9 @@ import urllib.parse
         path component, but this is an easy fix; just substitute all dots for
         underscores or '%2E'.
         For example, www.zillow.com => www_zillow_com / www%2Ezillow%2Ecom
-    2   For the rest of the special characters(except dot), just URL any metric
-        name with special characters to make it valid for Graphite, and then URL
-        decode it when we need to reconstruct the information
+    2   For the rest of the special characters(except dot), just URL any
+        metric name with special characters to make it valid for Graphite,
+        and then URL decode it when we need to reconstruct the information.
 """
 
 
@@ -72,8 +72,8 @@ class GraphiteEncoder:
         """
         valid_graphite_metric_name = ""
         try:
-            valid_graphite_metric_name = \
-                urllib.parse.quote(section_name.encode('idna')).replace(".", "%2E")
+            valid_graphite_metric_name = urllib.parse\
+                .quote(section_name.encode('idna')).replace(".", "%2E")
         except Exception as e:
             raise e
         return valid_graphite_metric_name

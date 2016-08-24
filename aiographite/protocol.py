@@ -19,7 +19,7 @@ class PlaintextProtocol:
             return the required message formate for protocol 'plaintext'
             @param:
                 listOfPlaintext:
-                    ["metric1 value1 timestamp1", 
+                    ["metric1 value1 timestamp1",
                      "metric2 value2 timestamp2", ...]
                 type: List of String
         """
