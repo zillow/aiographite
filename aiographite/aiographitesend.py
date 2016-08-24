@@ -1,5 +1,5 @@
 from .protocol import PlaintextProtocol, PickleProtocol
-from .graphiteencoder import GraphiteEncoder
+from .graphite_encoder import GraphiteEncoder
 import asyncio
 import pickle
 import struct
