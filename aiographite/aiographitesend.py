@@ -42,7 +42,8 @@ class AIOGraphite:
         await self._send_message(message)
 
     @asyncio.coroutine
-    async def send_multiple(self, dataset: List[Tuple], timestamp=None) -> None:
+    async def send_multiple(self, dataset: List[Tuple],
+                            timestamp=None) -> None:
         """
             @param:
             Support two kinds of dataset
@@ -52,13 +53,13 @@ class AIOGraphite:
                                (metric2, value2, timestamp2), ...]
         """
         if not dataset:
-            return 
+            return
         timestamp = int(timestamp or time.time())
         # Generate message based on protocol
         message = self._generate_message_for_data_list(
             dataset,
-            timestamp, 
-            self.protocol.data_format, 
+            timestamp,
+            self.protocol.data_format,
             self.protocol.generate_message)
         # Sending Data
         await self._send_message(message)
@@ -79,7 +80,7 @@ class AIOGraphite:
         try:
             self._reader, self._writer = await asyncio.open_connection(
                 self._graphite_server,
-                self._graphite_port, 
+                self._graphite_port,
                 loop=self.loop)
         except socket.gaierror:
             raise AioGraphiteSendException(
@@ -102,16 +103,16 @@ class AIOGraphite:
     def clean_and_join_metric_parts(self, metric_parts: List[str]) -> str:
         """
             @purpose:
-                Make metric name valid for graphite in case that the metric 
+                Make metric name valid for graphite in case that the metric
                 name includes any special character which is not supported by Graphite
             @example:
                 Assuming that
 
-                    Expected_Metric_Name  =  metaccounts.authentication.password.attempted
+                Expected_Metric_Name  =  metaccounts.authentication.password.attempted
 
                 Then input metric_parts should be
 
-                    metric_parts = [metaccounts, authentication, password, attempted]
+                metric_parts = [metaccounts, authentication, password, attempted]
 
             @metric_parts: List of String
         """
@@ -126,16 +127,17 @@ class AIOGraphite:
         await self._writer.drain()
 
     def _generate_message_for_data_list(
-                            self, dataset: List[Tuple], timestamp, 
-                            formate_function: Callable[[str, int, int], str], 
-                            generate_message_function: Callable[[List[str]], bytes]) -> bytes:
+                    self, dataset: List[Tuple], timestamp,
+                    formate_function: Callable[[str, int, int], str],
+                    generate_message_function: Callable[[List[str]], bytes]) -> bytes:
         """
             generate proper formatted message
             @param:
             Support two kinds of dataset
                 1)  dataset = [(metric1, value1), (metric2, value2), ...]
                 or 
-                2)  dataset = [(metric1, value1, timestamp1), (metric2, value2, timestamp2), ...]
+                2)  dataset = [(metric1, value1, timestamp1),
+                               (metric2, value2, timestamp2), ...]
         """
         listofData = []
         for data in dataset:

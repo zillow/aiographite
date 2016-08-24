@@ -26,7 +26,8 @@ def test_pickle_protocol_formatted_data(metric, value, timestamp):
     ('python ruby java', 223, 435, 'python ruby java 223 435\n'),
     ('C C++ Perl', 53534, 32425, 'C C++ Perl 53534 32425\n'),
 ])
-def test_plaintext_protocol_formatted_data(metric, value, timestamp, expected_data):
+def test_plaintext_protocol_formatted_data(metric, value, 
+                                           timestamp, expected_data):
     plaintext = PlaintextProtocol()
     data = plaintext.data_format(metric, value, timestamp)
     assert data == expected_data
@@ -45,8 +46,8 @@ def test_generate_message_for_pickle():
 
 def test_generate_message_for_plaintext():
     plaintext_list = ["metric1 value1 timestamp1\n",
-                    "metric2 value2 timestamp2\n",
-                    "metric3 value3 timestamp3\n"]
+                      "metric2 value2 timestamp2\n",
+                      "metric3 value3 timestamp3\n"]
     expected_message = (
         b'metric1 value1 timestamp1\n'
         b'metric2 value2 timestamp2\n'
@@ -56,26 +57,30 @@ def test_generate_message_for_plaintext():
     assert message == expected_message
 
 
-@pytest.mark.parametrize("metric_parts, expected_metric_name", [
+@pytest.mark.parametrize(
+    "metric_parts, expected_metric_name", [
     (['sproc performance', 'velo@zillow.com', '::EH12'],
-      'sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12'),
+    'sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12'),
     (['dit_400', 'zpid@zillow.com', 'EHT::disk_usage_per_host'],
-      'dit_400.zpid%40zillow%2Ecom.EHT%3A%3Adisk_usage_per_host'),
+    'dit_400.zpid%40zillow%2Ecom.EHT%3A%3Adisk_usage_per_host'),
 ])
 def test_clean_and_join_metric_parts(metric_parts, expected_metric_name):
     with test_utils.run_test_server() as httpd:
         loop = asyncio.get_event_loop()
         plaintext_protocol = PlaintextProtocol()
-        aiographite = AIOGraphite(*httpd.address, plaintext_protocol, loop=loop)
+        aiographite = AIOGraphite(*httpd.address,
+                                  plaintext_protocol, loop=loop)
         metric_name = aiographite.clean_and_join_metric_parts(metric_parts)
         assert metric_name == expected_metric_name
 
 
-def test_generate_message_for_data_list(metric_value_timestamp_list, timestamp):
+def test_generate_message_for_data_list(metric_value_timestamp_list, 
+                                        timestamp):
     with test_utils.run_test_server() as httpd:
         loop = asyncio.get_event_loop()
         plaintext_protocol = PlaintextProtocol()
-        aiographite = AIOGraphite(*httpd.address, plaintext_protocol, loop=loop)
+        aiographite = AIOGraphite(*httpd.address,
+                                  plaintext_protocol, loop=loop)
         message = aiographite._generate_message_for_data_list(
             metric_value_timestamp_list,
             timestamp,
@@ -92,7 +97,8 @@ def test_open_connection():
     with test_utils.run_test_server() as httpd:
         loop = asyncio.get_event_loop()
         plaintext_protocol = PlaintextProtocol()
-        aiographite = AIOGraphite(*httpd.address, plaintext_protocol, loop=loop)
+        aiographite = AIOGraphite(*httpd.address,
+                                  plaintext_protocol, loop=loop)
         loop.run_until_complete(aiographite.connect_to_graphite())
         reader = aiographite._reader
         writer = aiographite._writer
@@ -104,13 +110,14 @@ def test_disconnect():
     with test_utils.run_test_server() as httpd:
         loop = asyncio.get_event_loop()
         plaintext_protocol = PlaintextProtocol()
-        aiographite = AIOGraphite(*httpd.address, plaintext_protocol, loop=loop)
+        aiographite = AIOGraphite(*httpd.address,
+                                  plaintext_protocol, loop=loop)
         loop.run_until_complete(aiographite.connect_to_graphite())
         aiographite.disconnect()
         reader = aiographite._reader
         writer = aiographite._writer
-        assert reader is  None
-        assert writer is  None
+        assert reader is None
+        assert writer is None
 
 
 def test_send_message_and_send():
@@ -124,8 +131,9 @@ def test_send_message_and_send():
     
     async def test_send_message():
         plaintext_protocol = PlaintextProtocol()
-        aiographite = AIOGraphite('127.0.0.1',
-            DEFAULT_GRAPHITE_PLAINTEXT_PORT, plaintext_protocol, loop=loop)
+        aiographite = AIOGraphite(
+            '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+            plaintext_protocol, loop=loop)
         message = "hello world !"
         await aiographite.connect_to_graphite()
         await aiographite._send_message(message.encode("ascii"))
@@ -159,7 +167,8 @@ def test_send_message_and_send():
 
     async def test_send_multiple():
         pickle = PickleProtocol()
-        aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT, pickle, loop=loop)
+        aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+                                  pickle, loop=loop)
         await aiographite.connect_to_graphite() 
         dataset = [('sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12',
                     3233, 1471640923),
@@ -184,7 +193,8 @@ def test_send_message_and_send():
     def run(task, loop):
         return loop.run_until_complete(asyncio.ensure_future(task, loop=loop))
 
-    make_server = asyncio.start_server(server_handler, '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT)
+    make_server = asyncio.start_server(server_handler, '127.0.0.1',
+                                       DEFAULT_GRAPHITE_PLAINTEXT_PORT)
     server = run(make_server, loop)
     run(test_send_message(), loop)
     run(test_send(), loop)

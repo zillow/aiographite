@@ -7,7 +7,7 @@ class PlaintextProtocol:
 
     def data_format(self, metric: str, value: int, timestamp: int) -> str:
         """
-            @return: required data formate when sending data 
+            @return: required data formate when sending data
                      through 'plaintext' protocol
             @return_type: String
         """
@@ -17,28 +17,31 @@ class PlaintextProtocol:
     def generate_message(self, listOfPlaintext: List[str]) -> bytes:
         """
             return the required message formate for protocol 'plaintext'
-            @param: 
-                listOfPlaintext: 
-                    ["metric1 value1 timestamp1", "metric2 value2 timestamp2", ...]
+            @param:
+                listOfPlaintext:
+                    ["metric1 value1 timestamp1", 
+                     "metric2 value2 timestamp2", ...]
                 type: List of String
         """
         return "".join(listOfPlaintext).encode('ascii')
-        
+
 
 class PickleProtocol:
 
-    def data_format(self, metric: str, 
-                    value: int, timestamp: int) -> Tuple[str, Tuple[int, int]]:
+    def data_format(self, metric: str,
+                    value: int,
+                    timestamp: int) -> Tuple[str, Tuple[int, int]]:
         """
-            @return: required data formate when sending data through 'pickle' protocol
+            @return: required data formate when sending data
+                     through 'pickle' protocol
             @return_type: Tuple
-        """     
-        return (metric, (timestamp, value)) 
+        """
+        return (metric, (timestamp, value))
 
     def generate_message(self, listOfMetricTuples: List[Tuple]) -> bytes:
         """
-            @param: 
-                listOfMetricTuples: [(metric1, (timestamp1, value1), 
+            @param:
+                listOfMetricTuples: [(metric1, (timestamp1, value1),
                                      (metric2, (timestamp2, value2), ...]
         """
         payload = pickle.dumps(listOfMetricTuples, protocol=2)
@@ -54,7 +57,8 @@ def _dummy_message_plaintext_formate():
 
 def _dummy_message_pickle_formate():
     print("Message formate for pickle protocol")
-    print("[(path1, (timestamp1, value1)), (path2, (timestamp2, value2)), ...]")
+    print("[(path1, (timestamp1, value1)), "
+          "(path2, (timestamp2, value2)), ...]")
 
 
 def main():
