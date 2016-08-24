@@ -11,7 +11,7 @@ import urllib.parse
 
 """
     Naming metrics schema:
-        <namespace>.<instrumented section>.<target (noun)>.<action (past tense verb)>
+    <namespace>.<instrumented section>.<target (noun)>.<action (past tense verb)>
 """
 
 """
@@ -21,26 +21,27 @@ import urllib.parse
     there are several limitations we should pay attention to.
 
     The conversions between ASCII and non-ASCII forms of a domain name are
-    accomplished by algorithms called ToASCII and ToUnicode. 
+    accomplished by algorithms called ToASCII and ToUnicode.
     These algorithms are not applied to the domain name as a whole, but
-    rather to individual labels. For example, 
+    rather to individual labels. For example,
     if the domain name is www.example.com, then the labels are www, example,
-    and com. ToASCII or ToUnicode are applied 
+    and com. ToASCII or ToUnicode are applied
     to each of these three separately.
 
-    The details of these two algorithms are complex, and are specified in RFC 3490.
-    The following gives an overview of their function.
+    The details of these two algorithms are complex, and are specified
+    in RFC 3490. The following gives an overview of their function.
 
-    ToASCII leaves unchanged any ASCII label, but will fail if the label is unsuitable
-    for the Domain Name System. If given a label containing at least one non-ASCII
-    character, ToASCII will apply the Nameprep algorithm, which converts the 
-    label to lowercase and performs other normalization, and will then translate
-    the result to ASCII using Punycode[16] before prepending the four-character string
-    "xn--".[17] This four-character string is called the ASCII Compatible Encoding (ACE)
-    prefix, and is used to distinguish Punycode encoded labels from ordinary ASCII labels.
-    The ToASCII algorithm can fail in several ways; for example, the final string could
-    exceed the 63-character limit of a DNS name. A label for which ToASCII fails cannot
-    be used in an internationalized domain name.
+    ToASCII leaves unchanged any ASCII label, but will fail if the label
+    is unsuitable for the Domain Name System. If given a label containing
+    at least one non-ASCII character, ToASCII will apply the Nameprep
+    algorithm, which converts the label to lowercase and performs other
+    normalization, and will then translate the result to ASCII using Punycode[16]
+    before prepending the four-character string "xn--".[17] This four-character
+    string is called the ASCII Compatible Encoding (ACE) prefix, and is used to
+    distinguish Punycode encoded labels from ordinary ASCII labels. The ToASCII
+    algorithm can fail in several ways; for example, the final string could
+    exceed the 63-character limit of a DNS name. A label for which ToASCII
+    fails cannot be used in an internationalized domain name.
 
     FAIL CASES:
     '.fd': starting with 'dot'
@@ -71,7 +72,8 @@ class GraphiteEncoder:
         """
         valid_graphite_metric_name = ""
         try:
-            valid_graphite_metric_name = urllib.parse.quote(section_name.encode('idna')).replace(".", "%2E")
+            valid_graphite_metric_name = \
+                urllib.parse.quote(section_name.encode('idna')).replace(".", "%2E")
         except Exception as e:
             raise e
         return valid_graphite_metric_name
@@ -84,7 +86,8 @@ class GraphiteEncoder:
         """
         display_metric_name = ""
         try:
-            display_metric_name = bytes(urllib.parse.unquote(idna_str), 'utf-8').decode('idna')
+            display_metric_name = \
+                bytes(urllib.parse.unquote(idna_str), 'utf-8').decode('idna')
         except Exception as e:
             raise e
         return display_metric_name
