@@ -9,7 +9,6 @@ from asyncio import test_utils
 DEFAULT_GRAPHITE_PLAINTEXT_PORT = 2003
 DEFAULT_GRAPHITE_PICKLE_PORT = 2004
 
-
 ################ Unit Tests ##################
 
 @pytest.mark.parametrize("metric, value, timestamp", [
@@ -21,7 +20,6 @@ def test_pickle_protocol_formatted_data(metric, value, timestamp):
 	pickle = PickleProtocol()
 	assert pickle.data_format(metric, value, timestamp) == (metric, (timestamp, value))
 
-
 @pytest.mark.parametrize("metric, value, timestamp, expected_data", [
     ('M M M', 124, 234, 'M M M 124 234\n'),
     ('python ruby java', 223, 435, 'python ruby java 223 435\n'),
@@ -31,7 +29,6 @@ def test_plaintext_protocol_formatted_data(metric, value, timestamp, expected_da
 	plaintext = PlaintextProtocol()
 	assert plaintext.data_format(metric, value, timestamp) == expected_data
 
-
 def test_generate_message_for_pickle():
 	pickle = PickleProtocol()
 	tuple_list = [('a', (123, 456)), ('b', (123, 456)), ('c', (876, 987))]
@@ -39,7 +36,6 @@ def test_generate_message_for_pickle():
 	b'K{M\xc8\x01\x86q\x02\x86q\x03X\x01\x00\x00\x00'
 	b'bq\x04K{M\xc8\x01\x86q\x05\x86q\x06X\x01\x00\x00\x00cq\x07Ml\x03M\xdb\x03\x86q\x08\x86q\te.')
 	assert pickle.generate_message(tuple_list) == expected_message
-
 
 def test_generate_message_for_plaintext():
 	plaintext_list = ["metric1 value1 timestamp1\n", 
@@ -51,7 +47,6 @@ def test_generate_message_for_plaintext():
 	plaintext = PlaintextProtocol()
 	message = plaintext.generate_message(plaintext_list)
 	assert message == expected_message
-
 
 @pytest.mark.parametrize("metric_parts, expected_metric_name", [
 	(['sproc performance', 'velo@zillow.com', '::EH12'], 
@@ -65,7 +60,6 @@ def test_clean_and_join_metric_parts(metric_parts, expected_metric_name):
 		plaintext_protocol = PlaintextProtocol()
 		aiographite = AIOGraphite(*httpd.address, plaintext_protocol, loop = loop)
 		assert aiographite.clean_and_join_metric_parts(metric_parts) == expected_metric_name
-
 
 def test_generate_message_for_data_list(metric_value_timestamp_list, timestamp):
 	with test_utils.run_test_server() as httpd:
@@ -82,9 +76,7 @@ def test_generate_message_for_data_list(metric_value_timestamp_list, timestamp):
 			b'hotpad 53534 1471640943\nstreeteasy 13424 1471640989\n')
 		assert message == expected_message
 
-
-def test_open_connection():
-	
+def test_open_connection():	
 	with test_utils.run_test_server() as httpd:
 		loop = asyncio.get_event_loop()
 		plaintext_protocol = PlaintextProtocol()
@@ -94,7 +86,6 @@ def test_open_connection():
 		writer = aiographite._writer
 		assert reader is not None
 		assert writer is not None
-
 
 def test_disconnect():
 	with test_utils.run_test_server() as httpd:
@@ -108,9 +99,7 @@ def test_disconnect():
 		assert reader is  None
 		assert writer is  None
 		
-
 def test_send_message_and_send():
-
 	loop = asyncio.get_event_loop()
 
 	async def server_handler(reader, writer):

@@ -2,34 +2,23 @@ from .graphite_encoder import GraphiteEncoder
 import asyncio
 import socket
 import time
-from typing import Dict, Tuple, List, Callable
-
-
-DEFAULT_GRAPHITE_PLAINTEXT_PORT = 2003
-DEFAULT_GRAPHITE_PICKLE_PORT = 2004
-SUPPORT_PROTOCOLS = ["plaintext", "pickle"]
-
+from aiographite.protocol import PlaintextProtocol, PickleProtocol
+from typing import Tuple, List, Callable
 
 class AioGraphiteSendException(Exception):
     pass
 
-
 class AIOGraphite:
 
 	def __init__(self, graphite_server, graphite_port, protocol, loop = None):
-
+		if not isinstance(protocol, (PlaintextProtocol, PickleProtocol)):
+			raise AioGraphiteSendException("Unsupported Protocol!")
 		self._graphite_server = graphite_server
-
 		self._graphite_port = graphite_port
-
 		self._graphite_server_address = (graphite_server, graphite_port)
-
 		self._reader, self._writer = None, None
-
 		self.protocol = protocol
-
 		self.loop = loop or asyncio.get_event_loop()
-
 
 	@asyncio.coroutine
 	async def send(self, metric: str, value: int, timestamp = None) -> None:
@@ -47,8 +36,6 @@ class AIOGraphite:
 		message = self.protocol.generate_message(listOfMetricTuples)
 		# Sending Data
 		await self._send_message(message)
-
-
 
 	@asyncio.coroutine
 	async def send_multiple(self, dataset: List[Tuple], timestamp = None) -> None:
@@ -68,7 +55,6 @@ class AIOGraphite:
 		# Sending Data
 		await self._send_message(message)
 
-
 	@asyncio.coroutine
 	async def close_event_loop(self) -> None:
 		"""
@@ -76,7 +62,6 @@ class AIOGraphite:
 			No call should be made after event loop closed
 		"""
 		self.loop.close()
-
 
 	@asyncio.coroutine
 	async def connect_to_graphite(self) -> None:
@@ -87,9 +72,8 @@ class AIOGraphite:
 			self._reader, self._writer = await asyncio.open_connection(self._graphite_server, 
 				self._graphite_port, loop = self.loop)
 		except socket.gaierror:
-			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s" 
+			raise AioGraphiteSendException("Unable to connect to the provided server address %s:%s"
 				% self._graphite_server_address)
-
 
 	def disconnect(self) -> None:
 		"""
@@ -102,7 +86,6 @@ class AIOGraphite:
 		finally:
 			self._writer = None
 			self._reader = None	
-
 
 	def clean_and_join_metric_parts(self, metric_parts: List[str]) -> str:
 		"""
@@ -122,7 +105,6 @@ class AIOGraphite:
 		"""
 		return ".".join([GraphiteEncoder.encode(dir_name) for dir_name in metric_parts])
 
-
 	@asyncio.coroutine
 	async def _send_message(self, message: bytes) -> None:
 		"""
@@ -130,7 +112,6 @@ class AIOGraphite:
 		"""
 		self._writer.write(message)
 		await self._writer.drain()
-
 
 	def _generate_message_for_data_list(self, dataset: List[Tuple], timestamp, 
 							formate_function: Callable[[str, int, int], str], 
@@ -153,12 +134,4 @@ class AIOGraphite:
 				timestamp = data_timestamp
 			listofData.append(formate_function(metric, value, timestamp))
 		message =  generate_message_function(listofData)
-		return message	
-
-		
-
-
-
-
-
-
+		return message
