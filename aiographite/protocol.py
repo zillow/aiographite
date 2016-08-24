@@ -5,7 +5,7 @@ import struct
 
 class PlaintextProtocol:
 
-    def data_format(self, metric: str, value: int, timestamp: int) -> str:
+    def format_data(self, metric: str, value: int, timestamp: int) -> str:
         """
             @return: required data formate when sending data
                      through 'plaintext' protocol
@@ -28,7 +28,7 @@ class PlaintextProtocol:
 
 class PickleProtocol:
 
-    def data_format(self, metric: str,
+    def format_data(self, metric: str,
                     value: int,
                     timestamp: int) -> Tuple[str, Tuple[int, int]]:
         """
