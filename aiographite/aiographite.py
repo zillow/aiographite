@@ -5,6 +5,9 @@ import time
 from aiographite.protocol import PlaintextProtocol, PickleProtocol
 from typing import Tuple, List, Callable
 
+DEFAULT_GRAPHITE_PICKLE_PORT = 2004
+DEFAULT_GRAPHITE_PLAINTEXT_PORT = 2003
+
 
 class AioGraphiteSendException(Exception):
     pass
@@ -12,7 +15,9 @@ class AioGraphiteSendException(Exception):
 
 class AIOGraphite:
 
-    def __init__(self, graphite_server, graphite_port, protocol, loop=None):
+    def __init__(self, graphite_server,
+                 graphite_port=DEFAULT_GRAPHITE_PICKLE_PORT,
+                 protocol=PickleProtocol(), loop=None):
         if not isinstance(protocol, (PlaintextProtocol, PickleProtocol)):
             raise AioGraphiteSendException("Unsupported Protocol!")
         self._graphite_server = graphite_server
