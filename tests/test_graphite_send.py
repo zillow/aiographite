@@ -201,3 +201,19 @@ async def test_disconnect():
     assert aiographite._reader is None
     assert aiographite._writer is None
     server.close()
+
+
+class TestProtocol:
+    protocol = "TestProtocol"
+
+
+@pytest.mark.asyncio
+async def test_wrong_protocol():
+    server = await asyncio.start_server(server_handler, '127.0.0.1',
+                                        DEFAULT_GRAPHITE_PLAINTEXT_PORT)
+    test_protocol = TestProtocol()
+    loop = asyncio.get_event_loop()
+    with pytest.raises(Exception):
+        AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+                    test_protocol, loop=loop)
+    server.close()
