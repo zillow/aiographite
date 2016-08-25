@@ -16,7 +16,7 @@ DEFAULT_GRAPHITE_PICKLE_PORT = 2004
 ])
 def test_pickle_protocol_formatted_data(metric, value, timestamp):
     pickle = PickleProtocol()
-    data = pickle.format_data(metric, value, timestamp)
+    data = pickle._format_data(metric, value, timestamp)
     expected_data = (metric, (timestamp, value))
     assert data == expected_data
 
@@ -29,13 +29,13 @@ def test_pickle_protocol_formatted_data(metric, value, timestamp):
 def test_plaintext_protocol_formatted_data(metric, value,
                                            timestamp, expected_data):
     plaintext = PlaintextProtocol()
-    data = plaintext.format_data(metric, value, timestamp)
+    data = plaintext._format_data(metric, value, timestamp)
     assert data == expected_data
 
 
 def test_generate_message_for_pickle():
     pickle = PickleProtocol()
-    tuple_list = [('a', (123, 456)), ('b', (123, 456)), ('c', (876, 987))]
+    tuple_list = [('a', 456, 123), ('b', 456, 123), ('c', 987, 876)]
     expected_message = (
         b'\x00\x00\x00B\x80\x02]q\x00(X\x01\x00\x00\x00aq\x01'
         b'K{M\xc8\x01\x86q\x02\x86q\x03X\x01\x00\x00\x00'
@@ -45,15 +45,15 @@ def test_generate_message_for_pickle():
 
 
 def test_generate_message_for_plaintext():
-    plaintext_list = ["metric1 value1 timestamp1\n",
-                      "metric2 value2 timestamp2\n",
-                      "metric3 value3 timestamp3\n"]
+    tuple_list = [("metric1", 455, 1471640924),
+                  ("metric2", 123, 1471640923),
+                  ("metric3", 987, 1471640925)]
     expected_message = (
-        b'metric1 value1 timestamp1\n'
-        b'metric2 value2 timestamp2\n'
-        b'metric3 value3 timestamp3\n')
+        b'metric1 455 1471640924\n'
+        b'metric2 123 1471640923\n'
+        b'metric3 987 1471640925\n')
     plaintext = PlaintextProtocol()
-    message = plaintext.generate_message(plaintext_list)
+    message = plaintext.generate_message(tuple_list)
     assert message == expected_message
 
 
@@ -83,7 +83,6 @@ def test_generate_message_for_data_list(metric_value_timestamp_list,
         message = aiographite._generate_message_for_data_list(
             metric_value_timestamp_list,
             timestamp,
-            plaintext_protocol.format_data,
             plaintext_protocol.generate_message
         )
         expected_message = (

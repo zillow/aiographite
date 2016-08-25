@@ -39,9 +39,7 @@ class AIOGraphite:
             return
         timestamp = int(timestamp or time.time())
         # Generate message based on protocol
-        listOfMetricTuples = [
-            self.protocol.format_data(metric, value, timestamp)
-        ]
+        listOfMetricTuples = [(metric, value, timestamp)]
         message = self.protocol.generate_message(listOfMetricTuples)
         # Sending Data
         await self._send_message(message)
@@ -64,7 +62,6 @@ class AIOGraphite:
         message = self._generate_message_for_data_list(
             dataset,
             timestamp,
-            self.protocol.format_data,
             self.protocol.generate_message)
         # Sending Data
         await self._send_message(message)
@@ -135,10 +132,11 @@ class AIOGraphite:
         await self._writer.drain()
 
     def _generate_message_for_data_list(
-                    self, dataset: List[Tuple], timestamp,
-                    format_data: Callable[[str, int, int], str],
-                    generate_message_function: Callable[[List[str]], bytes]
-                    ) -> bytes:
+                self, dataset: List[Tuple], timestamp,
+                generate_message_function: Callable[
+                        [List[Tuple[str, int, int]]], bytes
+                    ]
+            ) -> bytes:
         """
             generate proper formatted message
             @param:
@@ -156,6 +154,6 @@ class AIOGraphite:
             else:
                 (metric, value, data_timestamp) = data
                 timestamp = data_timestamp
-            listofData.append(format_data(metric, value, timestamp))
+            listofData.append((metric, value, timestamp))
         message = generate_message_function(listofData)
         return message

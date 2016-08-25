@@ -5,7 +5,7 @@ import struct
 
 class PlaintextProtocol:
 
-    def format_data(self, metric: str, value: int, timestamp: int) -> str:
+    def _format_data(self, metric: str, value: int, timestamp: int) -> str:
         """
             @return: required data formate when sending data
                      through 'plaintext' protocol
@@ -14,23 +14,26 @@ class PlaintextProtocol:
         formatted_data = " ".join([metric, str(value), str(timestamp)])
         return formatted_data + "\n"
 
-    def generate_message(self, listOfPlaintext: List[str]) -> bytes:
+    def generate_message(self,
+                         listOfTuples: List[Tuple[str, int, int]]) -> bytes:
         """
             return the required message formate for protocol 'plaintext'
             @param:
-                listOfPlaintext:
-                    ["metric1 value1 timestamp1",
-                     "metric2 value2 timestamp2", ...]
-                type: List of String
+                listOfTuples:
+                    [(metric1, value1, timestamp1),
+                     (metric2, value2, timestamp2), ...]
         """
+        listOfPlaintext = []
+        for metric, value, timestamp in listOfTuples:
+            listOfPlaintext.append(self._format_data(metric, value, timestamp))
         return "".join(listOfPlaintext).encode('ascii')
 
 
 class PickleProtocol:
 
-    def format_data(self, metric: str,
-                    value: int,
-                    timestamp: int) -> Tuple[str, Tuple[int, int]]:
+    def _format_data(self, metric: str,
+                     value: int,
+                     timestamp: int) -> Tuple[str, Tuple[int, int]]:
         """
             @return: required data formate when sending data
                      through 'pickle' protocol
@@ -38,13 +41,19 @@ class PickleProtocol:
         """
         return (metric, (timestamp, value))
 
-    def generate_message(self, listOfMetricTuples: List[Tuple]) -> bytes:
+    def generate_message(self,
+                         listOfTuples: List[Tuple[str, int, int]]) -> bytes:
         """
             @param:
-                listOfMetricTuples: [(metric1, (timestamp1, value1),
-                                     (metric2, (timestamp2, value2), ...]
+                listOfTuples: [(metric1, value1, timestamp1),
+                               (metric2, value2, timestamp2), ...]
         """
-        payload = pickle.dumps(listOfMetricTuples, protocol=2)
+        listOfTargetTuples = []
+        for metric, value, timestamp in listOfTuples:
+            listOfTargetTuples.append(
+                    self._format_data(metric, value, timestamp)
+                )
+        payload = pickle.dumps(listOfTargetTuples, protocol=2)
         header = struct.pack("!L", len(payload))
         message = header + payload
         return message
