@@ -28,20 +28,7 @@ import urllib.parse
     and com. ToASCII or ToUnicode are applied
     to each of these three separately.
 
-    The details of these two algorithms are complex, and are specified
-    in RFC 3490. The following gives an overview of their function.
-
-    ToASCII leaves unchanged any ASCII label, but will fail if the label
-    is unsuitable for the Domain Name System. If given a label containing
-    at least one non-ASCII character, ToASCII will apply the Nameprep
-    algorithm, which converts the label to lowercase and performs other
-    normalization, and will then translate the result to ASCII using Punycode
-    before prepending the four-character string "xn--". This four-character
-    string is called the ASCII Compatible Encoding (ACE) prefix, and is used to
-    distinguish Punycode encoded labels from ordinary ASCII labels. The ToASCII
-    algorithm can fail in several ways; for example, the final string could
-    exceed the 63-character limit of a DNS name. A label for which ToASCII
-    fails cannot be used in an internationalized domain name.
+    Ref: https://en.wikipedia.org/wiki/Internationalized_domain_name
 
     FAIL CASES:
     '.fd': starting with 'dot'
