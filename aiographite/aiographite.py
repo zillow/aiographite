@@ -28,7 +28,7 @@ class AIOGraphite:
         self.loop = loop or asyncio.get_event_loop()
 
     @asyncio.coroutine
-    async def send(self, metric: str, value: int, timestamp=None) -> None:
+    async def send(self, metric: str, value: int, timestamp: int=None) -> None:
         """
             @metric: String, valid metric name for Graphite
             @value: int
@@ -46,7 +46,7 @@ class AIOGraphite:
 
     @asyncio.coroutine
     async def send_multiple(self, dataset: List[Tuple],
-                            timestamp=None) -> None:
+                            timestamp: int=None) -> None:
         """
             @param:
             Support two kinds of dataset
@@ -96,8 +96,6 @@ class AIOGraphite:
         """
         try:
             self._writer.close()
-        except (AttributeError, Exception):
-            self._writer = None
         finally:
             self._writer = None
             self._reader = None
@@ -132,7 +130,7 @@ class AIOGraphite:
         await self._writer.drain()
 
     def _generate_message_for_data_list(
-                self, dataset: List[Tuple], timestamp,
+                self, dataset: List[Tuple], timestamp: int,
                 generate_message_function: Callable[
                         [List[Tuple[str, int, int]]], bytes
                     ]
