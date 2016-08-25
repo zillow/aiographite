@@ -14,7 +14,10 @@ from aiographite.graphite_encoder import GraphiteEncoder
     'a.b.___c d _feg',
     '_ . .fda',
     '_.',
-    '汉 字.汉*字'
+    '汉 字.汉*字',
+    '%2D%2Ea bcd',
+    '_hello world.%2E',
+    'www.zillow.com.%2Ehello%2D'
 ])
 def test_consistency(name):
     assert GraphiteEncoder.decode(GraphiteEncoder.encode(name)) == name
