@@ -102,6 +102,10 @@ A simple example.
       main()
 
 
+----------------------
+Graphite setup
+----------------------
+
 Do not have graphite instances ? Set up a graphite instance on your local machine! 
 
 Please refer:
