@@ -30,7 +30,7 @@ You can install aiographite globally with any Python package manager:
 Quick start
 ----------------------
 
-Simple example for quick start.
+Let's get started.
 
 .. code::
 
@@ -40,7 +40,8 @@ Simple example for quick start.
     loop = asyncio.get_event_loop()
     plaintext_protocol = PlaintextProtocol()
     aiographite = AIOGraphite(*httpd.address, plaintext_protocol, loop = loop)
-    await aiographite.connect_to_graphite()
+    await aiographite.connect()
+
 
     """
       Send a tuple (metric, value , timestamp)
@@ -61,3 +62,53 @@ Simple example for quick start.
     """
     metric = aiographite.clean_and_join_metric_parts(metric_parts)
     aiographite.send(metric, value, timestamp)
+
+
+----------------------
+Example
+----------------------
+
+A simple example.
+
+.. code::
+
+    from aiographite.protocol import PlaintextProtocol
+    from aiographite.aiographite import AIOGraphite
+    import time
+    import asyncio
+
+
+    LOOP = asyncio.get_event_loop()
+    SERVER = '127.0.0.1'
+    PORT = 2003
+
+
+    async def send_data(metric, timestamp, value):
+      plaintext_protocol = PlaintextProtocol()
+      aiographite_instance = AIOGraphite(SERVER, PORT, plaintext_protocol, loop = LOOP)
+      await aiographite_instance.connect()
+      await aiographite_instance.send(metric, value, timestamp)
+
+
+    def main():
+      tasks = []
+      timestamp = int(time.time())
+      for i in range(10):
+        tasks.append(asyncio.ensure_future(send_data("yun_test.aiographite", timestamp + 60 * i, i)))
+      LOOP.run_until_complete(asyncio.gather(*tasks))
+      LOOP.close()
+
+    if __name__ == '__main__':
+      main()
+
+
+----------------------
+Graphite setup
+----------------------
+
+Do not have graphite instances ? Set up a graphite instance on your local machine! 
+
+Please refer:
+
+* https://github.com/yunstanford/MyGraphite
+* https://github.com/yunstanford/GraphiteSetup
