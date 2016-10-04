@@ -79,24 +79,30 @@ A simple example.
 
 
     LOOP = asyncio.get_event_loop()
-    SERVER = '127.0.0.1'
+    SERVER = 'orb-t00-gft-001.uni.zillow.local'
     PORT = 2003
 
 
-    async def send_data(metric, timestamp, value):
+    def test_send_data():
+      # Initiazlize an aiographite instance
       plaintext_protocol = PlaintextProtocol()
       aiographite_instance = AIOGraphite(SERVER, PORT, plaintext_protocol, loop = LOOP)
-      await aiographite_instance.connect()
-      await aiographite_instance.send(metric, value, timestamp)
+
+      # Connect to graphite server
+      LOOP.run_until_complete(aiographite_instance.connect())
+
+      # Send data
+      tasks = []
+      timestamp = time.time()
+      for i in range(10):
+        tasks.append(asyncio.ensure_future(aiographite_instance.send("yun_test.aiographite", i, timestamp + 60 * i)))
+      LOOP.run_until_complete(asyncio.gather(*tasks))
+      LOOP.close()  
 
 
     def main():
-      tasks = []
-      timestamp = int(time.time())
-      for i in range(10):
-        tasks.append(asyncio.ensure_future(send_data("yun_test.aiographite", timestamp + 60 * i, i)))
-      LOOP.run_until_complete(asyncio.gather(*tasks))
-      LOOP.close()
+      test_send_data()
+
 
     if __name__ == '__main__':
       main()
