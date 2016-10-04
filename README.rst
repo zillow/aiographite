@@ -79,7 +79,7 @@ A simple example.
 
 
     LOOP = asyncio.get_event_loop()
-    SERVER = 'orb-t00-gft-001.uni.zillow.local'
+    SERVER = '127.0.0.1'
     PORT = 2003
 
 
