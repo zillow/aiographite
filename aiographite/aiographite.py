@@ -126,8 +126,20 @@ class AIOGraphite:
         """
             @message: data ready to sent to graphite server
         """
-        self._writer.write(message)
-        await self._writer.drain()
+        if not self._writer:
+            await self.connect()
+        attemp = 3
+        while attemp > 0:
+            try:
+                self._writer.write(message)
+                await self._writer.drain()
+                return
+            except Exception:
+                # If failed to send data, then try to send a
+                # new connection
+                self.disconnect()
+                await self.connect()
+                attemp = attemp - 1
 
     def _generate_message_for_data_list(
                 self, dataset: List[Tuple], timestamp: int,
