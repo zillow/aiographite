@@ -109,6 +109,17 @@ A simple example.
 
 
 ----------------------
+Development
+----------------------
+
+Run unit tests.
+
+.. code::
+
+    ./uranium test
+
+
+----------------------
 Graphite setup
 ----------------------
 
