@@ -5,6 +5,10 @@ aiographite
     :alt: build status
     :target: https://travis-ci.org/zillow/aiographite
 
+.. image:: https://codecov.io/gh/zillow/aiographite/branch/master/graph/badge.svg
+    :alt: codecov
+    :target: https://codecov.io/gh/zillow/aiographite
+
 An asyncio library for graphite.
 
 ---------------------

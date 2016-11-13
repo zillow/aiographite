@@ -17,7 +17,26 @@ from aiographite.graphite_encoder import GraphiteEncoder
     '汉 字.汉*字',
     '%2D%2Ea bcd',
     '_hello world.%2E',
-    'www.zillow.com.%2Ehello%2D'
+    'www.zillow.com.%2Ehello%2D',
+    ''
 ])
 def test_consistency(name):
     assert GraphiteEncoder.decode(GraphiteEncoder.encode(name)) == name
+
+
+@pytest.mark.parametrize("name", [
+    None,
+    1
+])
+def test_encode_invalid_input(name):
+    with pytest.raises(Exception):
+        GraphiteEncoder.encode(name)
+
+
+@pytest.mark.parametrize("name", [
+    None,
+    1
+])
+def test_decode_invalid_input(name):
+    with pytest.raises(Exception):
+        GraphiteEncoder.decode(name)
