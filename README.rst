@@ -9,7 +9,13 @@ aiographite
     :alt: coverage status
     :target: https://coveralls.io/github/zillow/aiographite?branch=master
 
+
 An asyncio library for graphite.
+
+You can find out more here:
+
+http://aiographite.readthedocs.io/en/latest/
+
 
 ---------------------
 What is aiographite ?
