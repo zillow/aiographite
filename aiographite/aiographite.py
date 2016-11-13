@@ -1,6 +1,5 @@
 from .graphite_encoder import GraphiteEncoder
 import asyncio
-import socket
 import time
 from aiographite.protocol import PlaintextProtocol, PickleProtocol
 from typing import Tuple, List, Callable
@@ -67,14 +66,6 @@ class AIOGraphite:
         await self._send_message(message)
 
     @asyncio.coroutine
-    async def close_event_loop(self) -> None:
-        """
-            Close Event Loop.
-            No call should be made after event loop closed
-        """
-        self.loop.close()
-
-    @asyncio.coroutine
     async def connect(self) -> None:
         """
             Connect to Graphite Server based on Provided Server Address
@@ -84,7 +75,7 @@ class AIOGraphite:
                 self._graphite_server,
                 self._graphite_port,
                 loop=self.loop)
-        except socket.gaierror:
+        except Exception:
             raise AioGraphiteSendException(
                 "Unable to connect to the provided server address %s:%s"
                 % self._graphite_server_address
@@ -137,8 +128,11 @@ class AIOGraphite:
             except Exception:
                 # If failed to send data, then try to send a
                 # new connection
-                self.disconnect()
-                await self.connect()
+                try:
+                    self.disconnect()
+                    await self.connect()
+                except Exception:
+                    pass
                 attemp = attemp - 1
 
     def _generate_message_for_data_list(
