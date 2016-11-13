@@ -5,9 +5,9 @@ aiographite
     :alt: build status
     :target: https://travis-ci.org/zillow/aiographite
 
-.. image:: https://codecov.io/gh/zillow/aiographite/branch/master/graph/badge.svg
-    :alt: codecov
-    :target: https://codecov.io/gh/zillow/aiographite
+.. image:: https://coveralls.io/repos/github/zillow/aiographite/badge.svg?branch=master
+    :alt: coverage status
+    :target: https://coveralls.io/github/zillow/aiographite?branch=master
 
 An asyncio library for graphite.
 
