@@ -6,7 +6,17 @@
 aiographite
 ===========
 
+.. image:: https://travis-ci.org/zillow/aiographite.svg?branch=master
+    :alt: build status
+    :target: https://travis-ci.org/zillow/aiographite
+
+.. image:: https://coveralls.io/repos/github/zillow/aiographite/badge.svg?branch=master
+    :alt: coverage status
+    :target: https://coveralls.io/github/zillow/aiographite?branch=master
+
+
 An asyncio library for graphite.
+
 
 ---------------------
 What is aiographite ?
@@ -17,21 +27,10 @@ to help Graphite users to send data into graphite easily.
 
 
 ----------------------
-Installing it globally
-----------------------
-
-You can install aiographite globally with any Python package manager:
-
-.. code::
-
-    pip install aiographite
-
-
-----------------------
 Quick start
 ----------------------
 
-Simple example for quick start.
+Let's get started.
 
 .. code::
 
@@ -41,7 +40,8 @@ Simple example for quick start.
     loop = asyncio.get_event_loop()
     plaintext_protocol = PlaintextProtocol()
     aiographite = AIOGraphite(*httpd.address, plaintext_protocol, loop = loop)
-    await aiographite.connect_to_graphite()
+    await aiographite.connect()
+
 
     """
       Send a tuple (metric, value , timestamp)
@@ -63,12 +63,18 @@ Simple example for quick start.
     metric = aiographite.clean_and_join_metric_parts(metric_parts)
     aiographite.send(metric, value, timestamp)
 
+
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-
+   installation
+   client
+   protocols
+   encoder
+   example
+   development
 
 Indices and tables
 ==================
