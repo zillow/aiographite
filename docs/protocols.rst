@@ -1,5 +1,5 @@
 ===========
-protocols
+Protocols
 ===========
 
 AIOGraphite support two protocols:
