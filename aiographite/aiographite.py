@@ -13,6 +13,10 @@ class AioGraphiteSendException(Exception):
 
 
 class AIOGraphite:
+    """
+    AIOGraphite is a Graphite client class, ultilizing asyncio,
+    designed to help Graphite users to send data into graphite easily.
+    """
 
     def __init__(self, graphite_server,
                  graphite_port=DEFAULT_GRAPHITE_PICKLE_PORT,
@@ -29,10 +33,9 @@ class AIOGraphite:
     @asyncio.coroutine
     async def send(self, metric: str, value: int, timestamp: int=None) -> None:
         """
-            @metric: String, valid metric name for Graphite
-            @value: int
-            @timestamp: int
-            Send a single data(metric value timestamp) to graphite
+        send a single metric.
+
+        args: metric, value, timestamp. (str, int, int).
         """
         if not metric:
             return
@@ -47,12 +50,10 @@ class AIOGraphite:
     async def send_multiple(self, dataset: List[Tuple],
                             timestamp: int=None) -> None:
         """
-            @param:
-            Support two kinds of dataset
-                1)  dataset = [(metric1, value1), (metric2, value2), ...]
-                or
-                2)  dataset = [(metric1, value1, timestamp1),
-                               (metric2, value2, timestamp2), ...]
+        send a list of tuples.
+
+        args: a list of tuples (metric, value, timestamp), and timestamp
+        is optional.
         """
         if not dataset:
             return
@@ -68,7 +69,7 @@ class AIOGraphite:
     @asyncio.coroutine
     async def connect(self) -> None:
         """
-            Connect to Graphite Server based on Provided Server Address
+        Connect to Graphite Server based on Provided Server Address
         """
         try:
             self._reader, self._writer = await asyncio.open_connection(
@@ -83,7 +84,7 @@ class AIOGraphite:
 
     def disconnect(self) -> None:
         """
-            Close the TCP connection
+        Close the TCP connection to graphite server.
         """
         try:
             self._writer.close()
@@ -93,20 +94,19 @@ class AIOGraphite:
 
     def clean_and_join_metric_parts(self, metric_parts: List[str]) -> str:
         """
-            @purpose:
-                Make metric name valid for graphite in case that the metric
-                name includes any special character which is not supported
-                by Graphite
-            @example:
-                Assuming that
+        This method helps encode any input metric to valid metric for graphite
+        in case that the metric name includes any special character which is
+        not supported by Graphite.
 
-                Expected_Metric = metaccounts.authentication.password.attempted
+        args: a list of metric parts(string).
 
-                Then input metric_parts should be
+        returns a valid metric name for graphite.
 
-                metric_parts = [metaccounts,authentication,password,attempted]
+        example:
 
-            @metric_parts: List of String
+        .. code:: python
+
+            metric = aiographite.clean_and_join_metric_parts(metric_parts)
         """
         return ".".join([
                 GraphiteEncoder.encode(dir_name) for dir_name in metric_parts
