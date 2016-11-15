@@ -43,3 +43,4 @@ Full API Reference
 ------------------
 
 .. autoclass:: aiographite.aiographite.AIOGraphite
+    :members: send, send_multiple, connect, disconnect, clean_and_join_metric_parts

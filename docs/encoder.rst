@@ -11,3 +11,4 @@ Full API Reference
 ------------------
 
 .. autoclass:: aiographite.graphite_encoder.GraphiteEncoder
+    :members: encode, decode
