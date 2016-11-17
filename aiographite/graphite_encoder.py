@@ -4,12 +4,6 @@
 import urllib.parse
 
 """
-    Graphite expects everything to be just ASCII to split/processing them,
-    and then make directories based on metric name. So any special name
-    not allow to appear in directory/file name is not supported by Graphite.
-"""
-
-"""
     Naming metrics schema:
     <namespace>.<instrumented section>.<target>.<action>
 """
@@ -49,13 +43,27 @@ import urllib.parse
 
 
 class GraphiteEncoder:
-    # Naming Metrics:
-    # <section_name>.<section_name>.<section_name>.<section_name>
+    """
+    Graphite expects everything to be just ASCII to split/processing them,
+    and then make directories based on metric name. So any special name
+    not allow to appear in directory/file name is not supported by Graphite.
+
+    GraphiteEncoder is designed to help users to send valid metric
+    name to graphite.
+
+    Metrics:
+    <section_name>.<section_name>.<section_name>.<section_name>
+    """
+
     @staticmethod
     def encode(section_name):
         """
-            @param:   Section Name  (could include any character)
-            @return:  valid metric name for graphite
+        This method helps to encode any input metric name to a valid graphite
+        metric name.
+
+        args: section name(could include any character), a string
+
+        returns valid metric name for graphite
         """
         valid_graphite_metric_name = ""
         try:
@@ -68,8 +76,12 @@ class GraphiteEncoder:
     @staticmethod
     def decode(idna_str):
         """
-            @param: valid metric name of graphite
-            @return: the original name
+        This method helps to decode a valid metric name in graphite to its
+        original metric name.
+
+        args: a valid metric name in graphite.
+
+        returns the original metric name.
         """
         display_metric_name = ""
         try:

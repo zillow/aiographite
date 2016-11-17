@@ -7,9 +7,9 @@ class PlaintextProtocol:
 
     def _format_data(self, metric: str, value: int, timestamp: int) -> str:
         """
-            @return: required data formate when sending data
-                     through 'plaintext' protocol
-            @return_type: String
+        @return: required data formate when sending data
+                 through 'plaintext' protocol
+        @return_type: String
         """
         formatted_data = " ".join([metric, str(value), str(timestamp)])
         return formatted_data + "\n"
@@ -17,11 +17,10 @@ class PlaintextProtocol:
     def generate_message(self,
                          listOfTuples: List[Tuple[str, int, int]]) -> bytes:
         """
-            return the required message formate for protocol 'plaintext'
-            @param:
-                listOfTuples:
-                    [(metric1, value1, timestamp1),
-                     (metric2, value2, timestamp2), ...]
+        This method helps generate message with proper format for
+        plaintext protocol.
+
+        args: a list of tuples (metric, value, timestamp).
         """
         listOfPlaintext = []
         for metric, value, timestamp in listOfTuples:
@@ -35,18 +34,19 @@ class PickleProtocol:
                      value: int,
                      timestamp: int) -> Tuple[str, Tuple[int, int]]:
         """
-            @return: required data formate when sending data
-                     through 'pickle' protocol
-            @return_type: Tuple
+        @return: required data formate when sending data
+                 through 'pickle' protocol
+        @return_type: Tuple
         """
         return (metric, (timestamp, value))
 
     def generate_message(self,
                          listOfTuples: List[Tuple[str, int, int]]) -> bytes:
         """
-            @param:
-                listOfTuples: [(metric1, value1, timestamp1),
-                               (metric2, value2, timestamp2), ...]
+        This method helps generate message with proper format for
+        pickle protocol.
+
+        args: a list of tuples (metric, value, timestamp).
         """
         listOfTargetTuples = []
         for metric, value, timestamp in listOfTuples:
