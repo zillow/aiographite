@@ -30,7 +30,6 @@ class AIOGraphite:
         self.protocol = protocol
         self.loop = loop or asyncio.get_event_loop()
 
-    @asyncio.coroutine
     async def send(self, metric: str, value: int, timestamp: int=None) -> None:
         """
         send a single metric.
@@ -46,7 +45,6 @@ class AIOGraphite:
         # Sending Data
         await self._send_message(message)
 
-    @asyncio.coroutine
     async def send_multiple(self, dataset: List[Tuple],
                             timestamp: int=None) -> None:
         """
@@ -66,7 +64,6 @@ class AIOGraphite:
         # Sending Data
         await self._send_message(message)
 
-    @asyncio.coroutine
     async def connect(self) -> None:
         """
         Connect to Graphite Server based on Provided Server Address
@@ -112,7 +109,6 @@ class AIOGraphite:
                 GraphiteEncoder.encode(dir_name) for dir_name in metric_parts
             ])
 
-    @asyncio.coroutine
     async def _send_message(self, message: bytes) -> None:
         """
             @message: data ready to sent to graphite server
