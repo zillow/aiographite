@@ -49,20 +49,19 @@ Let's get started.
     """
     loop = asyncio.get_event_loop()
     plaintext_protocol = PlaintextProtocol()
-    aiographite = AIOGraphite(*httpd.address, plaintext_protocol, loop = loop)
-    await aiographite.connect()
+    graphiteConn = await aiographite.connect(*httpd.address, plaintext_protocol, loop=loop)
 
 
     """
       Send a tuple (metric, value , timestamp)
     """
-    aiographite.send(metric, value, timestamp)
+    graphiteConn.send(metric, value, timestamp)
 
 
     """
       Send a list of tuples List[(metric, value , timestamp)]
     """
-    aiographite.send_multiple(list)
+    graphiteConn.send_multiple(list)
 
 
     """
@@ -70,8 +69,14 @@ Let's get started.
       which helps users to send valid metric name to graphite.
       For Example: (metric_parts, value ,timestamp)
     """
-    metric = aiographite.clean_and_join_metric_parts(metric_parts)
-    aiographite.send(metric, value, timestamp)
+    metric = graphiteConn.clean_and_join_metric_parts(metric_parts)
+    graphiteConn.send(metric, value, timestamp)
+
+
+    """
+      Close connection
+    """
+    graphiteConn.close()
 
 
 ----------------------
@@ -83,7 +88,7 @@ A simple example.
 .. code::
 
     from aiographite.protocol import PlaintextProtocol
-    from aiographite.aiographite import AIOGraphite
+    from aiographite.aiographite import connect
     import time
     import asyncio
 
@@ -93,25 +98,20 @@ A simple example.
     PORT = 2003
 
 
-    def test_send_data():
+    async def test_send_data():
       # Initiazlize an aiographite instance
       plaintext_protocol = PlaintextProtocol()
-      aiographite_instance = AIOGraphite(SERVER, PORT, plaintext_protocol, loop = LOOP)
-
-      # Connect to graphite server
-      LOOP.run_until_complete(aiographite_instance.connect())
+      graphiteConn = await connect(SERVER, PORT, plaintext_protocol, loop=LOOP)
 
       # Send data
-      tasks = []
       timestamp = time.time()
       for i in range(10):
-        tasks.append(asyncio.ensure_future(aiographite_instance.send("yun_test.aiographite", i, timestamp + 60 * i)))
-      LOOP.run_until_complete(asyncio.gather(*tasks))
-      LOOP.close()  
+        await graphiteConn.send("yun_test.aiographite", i, timestamp + 60 * i)))
 
 
     def main():
-      test_send_data()
+      LOOP.run_until_complete(test_send_data())
+      LOOP.close()
 
 
     if __name__ == '__main__':
