@@ -44,6 +44,8 @@ Let's get started.
 
 .. code::
 
+    from aiographite.aiographite import connect
+
     """
       Initialize a aiographite instance
     """
