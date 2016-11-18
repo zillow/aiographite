@@ -6,7 +6,7 @@ A simple example.
 .. code::
 
     from aiographite.protocol import PlaintextProtocol
-    from aiographite.aiographite import AIOGraphite
+    from aiographite.aiographite import connect
     import time
     import asyncio
 
@@ -16,25 +16,20 @@ A simple example.
     PORT = 2003
 
 
-    def test_send_data():
+    async def test_send_data():
       # Initiazlize an aiographite instance
       plaintext_protocol = PlaintextProtocol()
-      aiographite_instance = AIOGraphite(SERVER, PORT, plaintext_protocol, loop = LOOP)
-
-      # Connect to graphite server
-      LOOP.run_until_complete(aiographite_instance.connect())
+      graphite_conn = await connect(SERVER, PORT, plaintext_protocol, loop=LOOP)
 
       # Send data
-      tasks = []
       timestamp = time.time()
       for i in range(10):
-        tasks.append(asyncio.ensure_future(aiographite_instance.send("yun_test.aiographite", i, timestamp + 60 * i)))
-      LOOP.run_until_complete(asyncio.gather(*tasks))
-      LOOP.close()  
+        await graphite_conn.send("yun_test.aiographite", i, timestamp + 60 * i)))
 
 
     def main():
-      test_send_data()
+      LOOP.run_until_complete(test_send_data())
+      LOOP.close()
 
 
     if __name__ == '__main__':

@@ -8,6 +8,20 @@ DEFAULT_GRAPHITE_PICKLE_PORT = 2004
 DEFAULT_GRAPHITE_PLAINTEXT_PORT = 2003
 
 
+async def connect(host, port=DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+                  protocol=PlaintextProtocol(), loop=None):
+    """
+    A factory for connecting to Graphite Server.
+
+    args: host, port, protocol, loop.
+
+    Returns an instantiated AIOGraphite .
+    """
+    conn = AIOGraphite(host, port, protocol, loop)
+    await conn._connect()
+    return conn
+
+
 class AioGraphiteSendException(Exception):
     pass
 
@@ -19,8 +33,8 @@ class AIOGraphite:
     """
 
     def __init__(self, graphite_server,
-                 graphite_port=DEFAULT_GRAPHITE_PICKLE_PORT,
-                 protocol=PickleProtocol(), loop=None):
+                 graphite_port=DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+                 protocol=PlaintextProtocol(), loop=None):
         if not isinstance(protocol, (PlaintextProtocol, PickleProtocol)):
             raise AioGraphiteSendException("Unsupported Protocol!")
         self._graphite_server = graphite_server
@@ -64,7 +78,13 @@ class AIOGraphite:
         # Sending Data
         await self._send_message(message)
 
-    async def connect(self) -> None:
+    async def close(self) -> None:
+        """
+        Close the TCP connection to graphite server.
+        """
+        await self._disconnect()
+
+    async def _connect(self) -> None:
         """
         Connect to Graphite Server based on Provided Server Address
         """
@@ -79,7 +99,7 @@ class AIOGraphite:
                 % self._graphite_server_address
                 )
 
-    def disconnect(self) -> None:
+    async def _disconnect(self) -> None:
         """
         Close the TCP connection to graphite server.
         """
@@ -114,22 +134,28 @@ class AIOGraphite:
             @message: data ready to sent to graphite server
         """
         if not self._writer:
-            await self.connect()
-        attemp = 3
-        while attemp > 0:
+            await self._connect()
+        attempts = 3
+        while attempts > 0:
             try:
                 self._writer.write(message)
                 await self._writer.drain()
                 return
             except Exception:
-                # If failed to send data, then try to send a
+                # If failed to send data, then try to set up a
                 # new connection
                 try:
-                    self.disconnect()
-                    await self.connect()
+                    await self._disconnect()
+                    await self._connect()
                 except Exception:
-                    pass
-                attemp = attemp - 1
+                    # if all attempts failed, then raise exception
+                    if attempts == 1:
+                        raise AioGraphiteSendException(
+                            "Failed to send after {0} attempts!"
+                            .format(str(attempts)))
+                    else:
+                        pass
+                attempts = attempts - 1
 
     def _generate_message_for_data_list(
                 self, dataset: List[Tuple], timestamp: int,

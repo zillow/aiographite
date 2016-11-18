@@ -34,25 +34,26 @@ Let's get started.
 
 .. code::
 
+    from aiographite.aiographite import connect
+
     """
       Initialize a aiographite instance
     """
     loop = asyncio.get_event_loop()
     plaintext_protocol = PlaintextProtocol()
-    aiographite = AIOGraphite(*httpd.address, plaintext_protocol, loop = loop)
-    await aiographite.connect()
+    graphite_conn = await aiographite.connect(*httpd.address, plaintext_protocol, loop=loop)
 
 
     """
       Send a tuple (metric, value , timestamp)
     """
-    aiographite.send(metric, value, timestamp)
+    graphite_conn.send(metric, value, timestamp)
 
 
     """
       Send a list of tuples List[(metric, value , timestamp)]
     """
-    aiographite.send_multiple(list)
+    graphite_conn.send_multiple(list)
 
 
     """
@@ -60,8 +61,14 @@ Let's get started.
       which helps users to send valid metric name to graphite.
       For Example: (metric_parts, value ,timestamp)
     """
-    metric = aiographite.clean_and_join_metric_parts(metric_parts)
-    aiographite.send(metric, value, timestamp)
+    metric = graphite_conn.clean_and_join_metric_parts(metric_parts)
+    graphite_conn.send(metric, value, timestamp)
+
+
+    """
+      Close connection
+    """
+    graphite_conn.close()
 
 
 Contents:

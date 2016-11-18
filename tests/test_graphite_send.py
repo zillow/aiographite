@@ -1,5 +1,5 @@
 import pytest
-from aiographite.aiographite import AIOGraphite
+from aiographite.aiographite import AIOGraphite, connect
 from aiographite.protocol import PlaintextProtocol, PickleProtocol
 import asyncio
 from asyncio import test_utils
@@ -126,7 +126,7 @@ async def test_send_message():
         '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
         plaintext_protocol, loop=loop)
     message = "hello world !"
-    await aiographite.connect()
+    await aiographite._connect()
     await aiographite._send_message(message.encode("ascii"))
     reader = aiographite._reader
     writer = aiographite._writer
@@ -134,7 +134,7 @@ async def test_send_message():
     await  writer.drain()
     data = (await reader.read()).decode("utf-8")
     writer.close()
-    aiographite.disconnect()
+    await aiographite._disconnect()
     server.close()
     assert message == data
 
@@ -147,7 +147,7 @@ async def test_send():
     loop = asyncio.get_event_loop()
     aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
                               plaintext_protocol, loop=loop)
-    await aiographite.connect()
+    await aiographite._connect()
     metric = 'sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12'
     value = 3232
     timestamp = 1471640923
@@ -160,7 +160,7 @@ async def test_send():
     await  writer.drain()
     data = (await reader.read()).decode("utf-8")
     writer.close()
-    aiographite.disconnect()
+    await aiographite._disconnect()
     assert message == data
     server.close()
 
@@ -173,7 +173,7 @@ async def test_send_None():
     loop = asyncio.get_event_loop()
     aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
                               plaintext_protocol, loop=loop)
-    await aiographite.connect()
+    await aiographite._connect()
     metric = None
     value = 3232
     timestamp = 1471640923
@@ -190,7 +190,7 @@ async def test_send_multiple():
     loop = asyncio.get_event_loop()
     aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
                               pickle, loop=loop)
-    await aiographite.connect()
+    await aiographite._connect()
     dataset = [('sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12',
                 3233, 1471640923),
                ('dit_400.zpid%40zillow%2Ecom.EHT%3A%3Adisk_usage_per_host',
@@ -202,7 +202,7 @@ async def test_send_multiple():
     await  writer.drain()
     data = (await reader.read())
     writer.close()
-    aiographite.disconnect()
+    await aiographite._disconnect()
     message = (
         b"\x00\x00\x00\x9c\x80\x02]q\x00(X2\x00\x00\x00sproc"
         b"%20performance.velo%40zillow%2Ecom.%3A%3AEH12q\x01J[u\xb7WM"
@@ -225,7 +225,7 @@ async def test_send_multiple_None(dataset):
     loop = asyncio.get_event_loop()
     aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
                               pickle, loop=loop)
-    await aiographite.connect()
+    await aiographite._connect()
     await aiographite.send_multiple(dataset)
     server.close()
 
@@ -240,7 +240,7 @@ async def test_disconnect():
         '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
         plaintext_protocol, loop=loop)
     message = "hello!"
-    await aiographite.connect()
+    await aiographite._connect()
     await aiographite._send_message(message.encode("ascii"))
     reader = aiographite._reader
     writer = aiographite._writer
@@ -249,7 +249,7 @@ async def test_disconnect():
     data = (await reader.read()).decode("utf-8")
     writer.close()
     assert message == data
-    aiographite.disconnect()
+    await aiographite._disconnect()
     assert aiographite._reader is None
     assert aiographite._writer is None
     server.close()
@@ -282,9 +282,9 @@ async def test_autoreconnect():
         '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
         plaintext_protocol, loop=loop)
     message = "hello!"
-    await aiographite.connect()
+    await aiographite._connect()
     # disconnect
-    aiographite.disconnect()
+    await aiographite._disconnect()
     # automatically connect if desconnected
     await aiographite._send_message(message.encode("ascii"))
     reader = aiographite._reader
@@ -297,18 +297,55 @@ async def test_autoreconnect():
 
     # Close Connection by closing server
     server.close()
-    await aiographite._send_message(message.encode("ascii"))
+    with pytest.raises(Exception):
+        await aiographite._send_message(message.encode("ascii"))
     reader = aiographite._reader
     writer = aiographite._writer
     assert reader is None and writer is None
 
 
 @pytest.mark.asyncio
-async def test_connect_raise_exception():
+async def test_AIOgraphite_connect_raise_exception():
     plaintext_protocol = PlaintextProtocol()
     loop = asyncio.get_event_loop()
     aiographite = AIOGraphite(
         '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
         plaintext_protocol, loop=loop)
     with pytest.raises(Exception):
-        await aiographite.connect()
+        await aiographite._connect()
+
+
+@pytest.mark.asyncio
+async def test_connect_raise_exception():
+    plaintext_protocol = PlaintextProtocol()
+    loop = asyncio.get_event_loop()
+    with pytest.raises(Exception):
+        await connect(
+            '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+            plaintext_protocol, loop=loop)
+
+
+@pytest.mark.asyncio
+async def test_full_path():
+    server = await asyncio.start_server(server_handler, '127.0.0.1',
+                                        DEFAULT_GRAPHITE_PLAINTEXT_PORT)
+    plaintext_protocol = PlaintextProtocol()
+    loop = asyncio.get_event_loop()
+    aiographite = await connect(
+        '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+        plaintext_protocol, loop=loop)
+    metric = 'sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12'
+    value = 3232
+    timestamp = 1471640923
+    message = ('sproc%20performance.velo%40zillow%2E'
+               'com.%3A%3AEH12 3232 1471640923\n')
+    await aiographite.send(metric, value, timestamp)
+    reader = aiographite._reader
+    writer = aiographite._writer
+    writer.write_eof()
+    await  writer.drain()
+    data = (await reader.read()).decode("utf-8")
+    writer.close()
+    await aiographite.close()
+    assert message == data
+    server.close()
