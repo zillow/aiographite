@@ -51,19 +51,19 @@ Let's get started.
     """
     loop = asyncio.get_event_loop()
     plaintext_protocol = PlaintextProtocol()
-    graphiteConn = await aiographite.connect(*httpd.address, plaintext_protocol, loop=loop)
+    graphite_conn = await aiographite.connect(*httpd.address, plaintext_protocol, loop=loop)
 
 
     """
       Send a tuple (metric, value , timestamp)
     """
-    graphiteConn.send(metric, value, timestamp)
+    graphite_conn.send(metric, value, timestamp)
 
 
     """
       Send a list of tuples List[(metric, value , timestamp)]
     """
-    graphiteConn.send_multiple(list)
+    graphite_conn.send_multiple(list)
 
 
     """
@@ -71,14 +71,14 @@ Let's get started.
       which helps users to send valid metric name to graphite.
       For Example: (metric_parts, value ,timestamp)
     """
-    metric = graphiteConn.clean_and_join_metric_parts(metric_parts)
-    graphiteConn.send(metric, value, timestamp)
+    metric = graphite_conn.clean_and_join_metric_parts(metric_parts)
+    graphite_conn.send(metric, value, timestamp)
 
 
     """
       Close connection
     """
-    graphiteConn.close()
+    graphite_conn.close()
 
 
 ----------------------
@@ -103,12 +103,12 @@ A simple example.
     async def test_send_data():
       # Initiazlize an aiographite instance
       plaintext_protocol = PlaintextProtocol()
-      graphiteConn = await connect(SERVER, PORT, plaintext_protocol, loop=LOOP)
+      graphite_conn = await connect(SERVER, PORT, plaintext_protocol, loop=LOOP)
 
       # Send data
       timestamp = time.time()
       for i in range(10):
-        await graphiteConn.send("yun_test.aiographite", i, timestamp + 60 * i)))
+        await graphite_conn.send("yun_test.aiographite", i, timestamp + 60 * i)))
 
 
     def main():

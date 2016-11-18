@@ -19,12 +19,12 @@ A simple example.
     async def test_send_data():
       # Initiazlize an aiographite instance
       plaintext_protocol = PlaintextProtocol()
-      graphiteConn = await connect(SERVER, PORT, plaintext_protocol, loop=LOOP)
+      graphite_conn = await connect(SERVER, PORT, plaintext_protocol, loop=LOOP)
 
       # Send data
       timestamp = time.time()
       for i in range(10):
-        await graphiteConn.send("yun_test.aiographite", i, timestamp + 60 * i)))
+        await graphite_conn.send("yun_test.aiographite", i, timestamp + 60 * i)))
 
 
     def main():
