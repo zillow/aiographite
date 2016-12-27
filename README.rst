@@ -45,6 +45,7 @@ Let's get started.
 .. code::
 
     from aiographite.aiographite import connect
+    from aiographite.protocol import PlaintextProtocol
 
     """
       Initialize a aiographite instance
@@ -57,13 +58,13 @@ Let's get started.
     """
       Send a tuple (metric, value , timestamp)
     """
-    graphite_conn.send(metric, value, timestamp)
+    await graphite_conn.send(metric, value, timestamp)
 
 
     """
       Send a list of tuples List[(metric, value , timestamp)]
     """
-    graphite_conn.send_multiple(list)
+    await graphite_conn.send_multiple(list)
 
 
     """
@@ -72,13 +73,13 @@ Let's get started.
       For Example: (metric_parts, value ,timestamp)
     """
     metric = graphite_conn.clean_and_join_metric_parts(metric_parts)
-    graphite_conn.send(metric, value, timestamp)
+    await graphite_conn.send(metric, value, timestamp)
 
 
     """
       Close connection
     """
-    graphite_conn.close()
+    await graphite_conn.close()
 
 
 ----------------------

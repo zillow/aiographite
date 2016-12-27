@@ -59,9 +59,9 @@ def test_generate_message_for_plaintext():
 
 @pytest.mark.parametrize("metric_parts, expected_metric_name", [
     (['sproc performance', 'velo@zillow.com', '::EH12'],
-     'sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12'),
+     'sproc%20performance-.velo%40zillow%2Ecom-.%3A%3AEH12-'),
     (['dit_400', 'zpid@zillow.com', 'EHT::disk_usage_per_host'],
-     'dit_400.zpid%40zillow%2Ecom.EHT%3A%3Adisk_usage_per_host')
+     'dit_400-.zpid%40zillow%2Ecom-.EHT%3A%3Adisk_usage_per_host-')
 ])
 def test_clean_and_join_metric_parts(metric_parts, expected_metric_name):
     with test_utils.run_test_server() as httpd:

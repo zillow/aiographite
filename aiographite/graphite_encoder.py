@@ -68,7 +68,7 @@ class GraphiteEncoder:
         valid_graphite_metric_name = ""
         try:
             valid_graphite_metric_name = urllib.parse\
-                .quote(section_name.encode('idna')).replace(".", "%2E")
+                .quote(section_name.encode('punycode')).replace(".", "%2E")
         except Exception as e:
             raise e
         return valid_graphite_metric_name
@@ -86,7 +86,8 @@ class GraphiteEncoder:
         display_metric_name = ""
         try:
             display_metric_name = \
-                bytes(urllib.parse.unquote(idna_str), 'utf-8').decode('idna')
+                bytes(urllib.parse.unquote(idna_str),
+                      'utf-8').decode('punycode')
         except Exception as e:
             raise e
         return display_metric_name
