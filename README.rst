@@ -44,7 +44,7 @@ Let's get started.
 
 .. code::
 
-    from aiographite.aiographite import connect
+    from aiographite import connect
     from aiographite.protocol import PlaintextProtocol
 
     """
@@ -91,7 +91,7 @@ A simple example.
 .. code::
 
     from aiographite.protocol import PlaintextProtocol
-    from aiographite.aiographite import connect
+    from aiographite import AIOGraphite
     import time
     import asyncio
 
@@ -104,12 +104,12 @@ A simple example.
     async def test_send_data():
       # Initiazlize an aiographite instance
       plaintext_protocol = PlaintextProtocol()
-      graphite_conn = await connect(SERVER, PORT, plaintext_protocol, loop=LOOP)
+      async with AIOGraphite(SERVER, PORT, plaintext_protocol, loop=LOOP) as graphite_conn:
 
-      # Send data
-      timestamp = time.time()
-      for i in range(10):
-        await graphite_conn.send("yun_test.aiographite", i, timestamp + 60 * i)))
+          # Send data
+          timestamp = time.time()
+          for i in range(10):
+            await graphite_conn.send("yun_test.aiographite", i, timestamp + 60 * i)))
 
 
     def main():
@@ -136,7 +136,7 @@ Run unit tests.
 Graphite setup
 ----------------------
 
-Do not have graphite instances ? Set up a graphite instance on your local machine! 
+Do not have graphite instances ? Set up a graphite instance on your local machine!
 
 Please refer:
 
