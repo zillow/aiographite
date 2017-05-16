@@ -1,1 +1,1 @@
-from .aiographite import AIOGraphite, connect
+from .aiographite import AIOGraphite, connect  # noqa
