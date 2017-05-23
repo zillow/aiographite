@@ -44,6 +44,13 @@ class AIOGraphite:
         self.protocol = protocol
         self.loop = loop or asyncio.get_event_loop()
 
+    async def __aenter__(self):
+        await self._connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, tb):
+        await self.close()
+
     async def send(self, metric: str, value: int, timestamp: int=None) -> None:
         """
         send a single metric.

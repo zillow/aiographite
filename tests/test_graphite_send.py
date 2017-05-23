@@ -1,5 +1,5 @@
 import pytest
-from aiographite.aiographite import AIOGraphite, connect
+from aiographite import AIOGraphite, connect
 from aiographite.protocol import PlaintextProtocol, PickleProtocol
 import asyncio
 from asyncio import test_utils
@@ -122,21 +122,19 @@ async def test_send_message():
                                         DEFAULT_GRAPHITE_PLAINTEXT_PORT)
     plaintext_protocol = PlaintextProtocol()
     loop = asyncio.get_event_loop()
-    aiographite = AIOGraphite(
-        '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
-        plaintext_protocol, loop=loop)
-    message = "hello world !"
-    await aiographite._connect()
-    await aiographite._send_message(message.encode("ascii"))
-    reader = aiographite._reader
-    writer = aiographite._writer
-    writer.write_eof()
-    await  writer.drain()
-    data = (await reader.read()).decode("utf-8")
-    writer.close()
-    await aiographite._disconnect()
-    server.close()
-    assert message == data
+    async with AIOGraphite(
+            '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+            plaintext_protocol, loop=loop) as aiographite:
+        message = "hello world !"
+        await aiographite._send_message(message.encode("ascii"))
+        reader = aiographite._reader
+        writer = aiographite._writer
+        writer.write_eof()
+        await  writer.drain()
+        data = (await reader.read()).decode("utf-8")
+        writer.close()
+        server.close()
+        assert message == data
 
 
 @pytest.mark.asyncio
@@ -145,24 +143,22 @@ async def test_send():
                                         DEFAULT_GRAPHITE_PLAINTEXT_PORT)
     plaintext_protocol = PlaintextProtocol()
     loop = asyncio.get_event_loop()
-    aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
-                              plaintext_protocol, loop=loop)
-    await aiographite._connect()
-    metric = 'sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12'
-    value = 3232
-    timestamp = 1471640923
-    message = ('sproc%20performance.velo%40zillow%2E'
-               'com.%3A%3AEH12 3232 1471640923\n')
-    await aiographite.send(metric, value, timestamp)
-    reader = aiographite._reader
-    writer = aiographite._writer
-    writer.write_eof()
-    await  writer.drain()
-    data = (await reader.read()).decode("utf-8")
-    writer.close()
-    await aiographite._disconnect()
-    assert message == data
-    server.close()
+    async with AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+                           plaintext_protocol, loop=loop) as aiographite:
+        metric = 'sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12'
+        value = 3232
+        timestamp = 1471640923
+        message = ('sproc%20performance.velo%40zillow%2E'
+                   'com.%3A%3AEH12 3232 1471640923\n')
+        await aiographite.send(metric, value, timestamp)
+        reader = aiographite._reader
+        writer = aiographite._writer
+        writer.write_eof()
+        await  writer.drain()
+        data = (await reader.read()).decode("utf-8")
+        writer.close()
+        assert message == data
+        server.close()
 
 
 @pytest.mark.asyncio
@@ -171,15 +167,14 @@ async def test_send_None():
                                         DEFAULT_GRAPHITE_PLAINTEXT_PORT)
     plaintext_protocol = PlaintextProtocol()
     loop = asyncio.get_event_loop()
-    aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
-                              plaintext_protocol, loop=loop)
-    await aiographite._connect()
-    metric = None
-    value = 3232
-    timestamp = 1471640923
-    # Should not raise exception
-    await aiographite.send(metric, value, timestamp)
-    server.close()
+    async with AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+                           plaintext_protocol, loop=loop) as aiographite:
+        metric = None
+        value = 3232
+        timestamp = 1471640923
+        # Should not raise exception
+        await aiographite.send(metric, value, timestamp)
+        server.close()
 
 
 @pytest.mark.asyncio
@@ -188,29 +183,27 @@ async def test_send_multiple():
                                         DEFAULT_GRAPHITE_PLAINTEXT_PORT)
     pickle = PickleProtocol()
     loop = asyncio.get_event_loop()
-    aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
-                              pickle, loop=loop)
-    await aiographite._connect()
-    dataset = [('sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12',
-                3233, 1471640923),
-               ('dit_400.zpid%40zillow%2Ecom.EHT%3A%3Adisk_usage_per_host',
-                2343, 1471640976)]
-    await aiographite.send_multiple(dataset)
-    reader = aiographite._reader
-    writer = aiographite._writer
-    writer.write_eof()
-    await  writer.drain()
-    data = (await reader.read())
-    writer.close()
-    await aiographite._disconnect()
-    message = (
-        b"\x00\x00\x00\x9c\x80\x02]q\x00(X2\x00\x00\x00sproc"
-        b"%20performance.velo%40zillow%2Ecom.%3A%3AEH12q\x01J[u\xb7WM"
-        b"\xa1\x0c\x86q\x02\x86q\x03X8\x00\x00\x00dit_400.zpid%40zillow"
-        b"%2Ecom.EHT%3A%3Adisk_usage_per_hostq\x04J\x90u\xb7WM'\t\x86q"
-        b"\x05\x86q\x06e.")
-    assert message == data
-    server.close()
+    async with AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+                           pickle, loop=loop) as aiographite:
+        dataset = [('sproc%20performance.velo%40zillow%2Ecom.%3A%3AEH12',
+                    3233, 1471640923),
+                   ('dit_400.zpid%40zillow%2Ecom.EHT%3A%3Adisk_usage_per_host',
+                    2343, 1471640976)]
+        await aiographite.send_multiple(dataset)
+        reader = aiographite._reader
+        writer = aiographite._writer
+        writer.write_eof()
+        await  writer.drain()
+        data = (await reader.read())
+        writer.close()
+        message = (
+            b"\x00\x00\x00\x9c\x80\x02]q\x00(X2\x00\x00\x00sproc"
+            b"%20performance.velo%40zillow%2Ecom.%3A%3AEH12q\x01J[u\xb7WM"
+            b"\xa1\x0c\x86q\x02\x86q\x03X8\x00\x00\x00dit_400.zpid%40zillow"
+            b"%2Ecom.EHT%3A%3Adisk_usage_per_hostq\x04J\x90u\xb7WM'\t\x86q"
+            b"\x05\x86q\x06e.")
+        assert message == data
+        server.close()
 
 
 @pytest.mark.parametrize("dataset", [
@@ -223,11 +216,10 @@ async def test_send_multiple_None(dataset):
                                         DEFAULT_GRAPHITE_PLAINTEXT_PORT)
     pickle = PickleProtocol()
     loop = asyncio.get_event_loop()
-    aiographite = AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
-                              pickle, loop=loop)
-    await aiographite._connect()
-    await aiographite.send_multiple(dataset)
-    server.close()
+    async with AIOGraphite('127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+                           pickle, loop=loop) as aiographite:
+        await aiographite.send_multiple(dataset)
+        server.close()
 
 
 @pytest.mark.asyncio

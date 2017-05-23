@@ -44,7 +44,7 @@ Let's get started.
 
 .. code::
 
-    from aiographite.aiographite import connect
+    from aiographite import connect
     from aiographite.protocol import PlaintextProtocol
 
     """
@@ -91,7 +91,7 @@ A simple example.
 .. code::
 
     from aiographite.protocol import PlaintextProtocol
-    from aiographite.aiographite import connect
+    from aiographite import connect
     import time
     import asyncio
 
@@ -136,7 +136,7 @@ Run unit tests.
 Graphite setup
 ----------------------
 
-Do not have graphite instances ? Set up a graphite instance on your local machine! 
+Do not have graphite instances ? Set up a graphite instance on your local machine!
 
 Please refer:
 
