@@ -34,7 +34,9 @@ Let's get started.
 
 .. code::
 
-    from aiographite.aiographite import connect
+    from aiographite import connect
+    from aiographite.protocol import PlaintextProtocol
+    import asyncio
 
     """
       Initialize a aiographite instance
