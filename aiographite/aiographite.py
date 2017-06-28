@@ -147,7 +147,10 @@ class AIOGraphite:
         while attempts > 0:
             try:
                 self._writer.write(message)
-                await asyncio.wait_for(self._writer.drain(), timeout=self._socket_timeout)
+                await asyncio.wait_for(
+                    self._writer.drain(),
+                    timeout=self._socket_timeout
+                    )
                 return
             except Exception:
                 # If failed to send data, then try to set up a
