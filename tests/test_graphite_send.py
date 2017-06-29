@@ -3,6 +3,7 @@ from aiographite import AIOGraphite, connect
 from aiographite.protocol import PlaintextProtocol, PickleProtocol
 import asyncio
 from asyncio import test_utils
+import time
 
 DEFAULT_GRAPHITE_PLAINTEXT_PORT = 2003
 DEFAULT_GRAPHITE_PICKLE_PORT = 2004
@@ -315,6 +316,34 @@ async def test_connect_raise_exception():
         await connect(
             '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
             plaintext_protocol, loop=loop)
+
+
+@pytest.fixture
+def mock_streamWriter_drain(monkeypatch):
+    async def asycio_streamWriter_drain(*args):
+        await asyncio.sleep(100)
+
+    monkeypatch.setattr(
+        'asyncio.StreamWriter.drain', asycio_streamWriter_drain
+    )
+
+
+@pytest.mark.asyncio
+async def test_send_message_timeout(mock_streamWriter_drain):
+    server = await asyncio.start_server(
+        server_handler, '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT)
+    plaintext_protocol = PlaintextProtocol()
+    loop = asyncio.get_event_loop()
+    aiographite = AIOGraphite(
+        '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
+        plaintext_protocol, loop=loop, timeout=0.01)
+    message = "hello!"
+    starttime = time.time()
+    await aiographite._send_message(message.encode("ascii"))
+    endtime = time.time()
+    elapsed_time = endtime - starttime
+    assert elapsed_time < 1
+    server.close()
 
 
 @pytest.mark.asyncio
