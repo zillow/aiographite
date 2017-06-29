@@ -34,13 +34,14 @@ class AIOGraphite:
 
     def __init__(self, graphite_server,
                  graphite_port=DEFAULT_GRAPHITE_PLAINTEXT_PORT,
-                 protocol=PlaintextProtocol(), loop=None):
+                 protocol=PlaintextProtocol(), loop=None, timeout=None):
         if not isinstance(protocol, (PlaintextProtocol, PickleProtocol)):
             raise AioGraphiteSendException("Unsupported Protocol!")
         self._graphite_server = graphite_server
         self._graphite_port = graphite_port
         self._graphite_server_address = (graphite_server, graphite_port)
         self._reader, self._writer = None, None
+        self._timeout = timeout
         self.protocol = protocol
         self.loop = loop or asyncio.get_event_loop()
 
@@ -146,7 +147,10 @@ class AIOGraphite:
         while attempts > 0:
             try:
                 self._writer.write(message)
-                await self._writer.drain()
+                await asyncio.wait_for(
+                    self._writer.drain(),
+                    timeout=self._timeout
+                    )
                 return
             except Exception:
                 # If failed to send data, then try to set up a

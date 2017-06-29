@@ -15,7 +15,7 @@ designed to help Graphite users to send data into graphite easily.
     """
     loop = asyncio.get_event_loop()
     plaintext_protocol = PlaintextProtocol()
-    graphite_conn = await aiographite.connect(*httpd.address, plaintext_protocol, loop=loop)
+    graphite_conn = await aiographite.connect(*httpd.address, plaintext_protocol, loop=loop, timeout=None)
 
 
     """
