@@ -162,8 +162,8 @@ class AIOGraphite:
                     # if all attempts failed, then raise exception
                     if attempts == 1:
                         raise AioGraphiteSendException(
-                            "Failed to send after {0} attempts!"
-                            .format(str(attempts)))
+                            "Failed to send metrics after reaching max retries!"
+                            )
                     else:
                         pass
                 attempts = attempts - 1
