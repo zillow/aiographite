@@ -328,18 +328,17 @@ def mock_streamWriter_drain(monkeypatch):
     )
 
 
-@pytest.mark.asyncio
-async def test_send_message_timeout(mock_streamWriter_drain):
-    server = await asyncio.start_server(
-        server_handler, '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT)
-    plaintext_protocol = PlaintextProtocol()
+def test_send_message_timeout(mock_streamWriter_drain):
     loop = asyncio.get_event_loop()
+    server = loop.run_until_complete(asyncio.start_server(
+        server_handler, '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT))
+    plaintext_protocol = PlaintextProtocol()
     aiographite = AIOGraphite(
         '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
-        plaintext_protocol, loop=loop, timeout=0.01)
+        plaintext_protocol, loop=loop, timeout=0.1)
     message = "hello!"
     starttime = time.time()
-    await aiographite._send_message(message.encode("ascii"))
+    loop.run_until_complete(aiographite._send_message(message.encode("ascii")))
     endtime = time.time()
     elapsed_time = endtime - starttime
     assert elapsed_time < 1
