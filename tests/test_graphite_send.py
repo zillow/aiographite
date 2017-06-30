@@ -335,7 +335,7 @@ def test_send_message_timeout(mock_streamWriter_drain):
     plaintext_protocol = PlaintextProtocol()
     aiographite = AIOGraphite(
         '127.0.0.1', DEFAULT_GRAPHITE_PLAINTEXT_PORT,
-        plaintext_protocol, loop=loop, timeout=0.1)
+        plaintext_protocol, loop=loop, timeout=0.01)
     message = "hello!"
     starttime = time.time()
     loop.run_until_complete(aiographite._send_message(message.encode("ascii")))
