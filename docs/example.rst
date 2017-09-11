@@ -24,7 +24,7 @@ A simple example.
       # Send data
       timestamp = time.time()
       for i in range(10):
-          await graphite_conn.send("yun_test.aiographite", i, timestamp + 60 * i)))
+          await graphite_conn.send("yun_test.aiographite", i, timestamp + 60 * i)
 
 
     def main():
