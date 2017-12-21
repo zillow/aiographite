@@ -112,7 +112,8 @@ class AIOGraphite:
         Close the TCP connection to graphite server.
         """
         try:
-            self._writer.close()
+            if self._writer:
+                self._writer.close()
         finally:
             self._writer = None
             self._reader = None

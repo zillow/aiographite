@@ -11,7 +11,7 @@ install_requires = []
 tests_require = []
 
 setup(name='aiographite',
-      version='0.1.8',
+      version='0.1.9',
       description='',
       long_description=open(README_PATH).read(),
       author='Yun Xu',
