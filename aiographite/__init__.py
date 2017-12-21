@@ -1,4 +1,4 @@
 from .aiographite import AIOGraphite, connect  # noqa
 
 
-__version__ = '0.1.8'
+__version__ = '0.1.9'
