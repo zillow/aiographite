@@ -30,11 +30,13 @@ class AIOGraphite:
     """
     AIOGraphite is a Graphite client class, ultilizing asyncio,
     designed to help Graphite users to send data into graphite easily.
+
+    Loop parameter is removed from this version as in python 3.10 and above parameter is removed
     """
 
     def __init__(self, graphite_server,
                  graphite_port=DEFAULT_GRAPHITE_PLAINTEXT_PORT,
-                 protocol=PlaintextProtocol(), loop=None, timeout=None):
+                 protocol=PlaintextProtocol(), timeout=None):
         if not isinstance(protocol, (PlaintextProtocol, PickleProtocol)):
             raise AioGraphiteSendException("Unsupported Protocol!")
         self._graphite_server = graphite_server
@@ -43,7 +45,6 @@ class AIOGraphite:
         self._reader, self._writer = None, None
         self._timeout = timeout
         self.protocol = protocol
-        self.loop = loop or asyncio.get_event_loop()
 
     async def __aenter__(self):
         await self._connect()
@@ -99,13 +100,10 @@ class AIOGraphite:
         try:
             self._reader, self._writer = await asyncio.open_connection(
                 self._graphite_server,
-                self._graphite_port,
-                loop=self.loop)
-        except Exception:
-            raise AioGraphiteSendException(
-                "Unable to connect to the provided server address %s:%s"
-                % self._graphite_server_address
-                )
+                self._graphite_port)
+        except Exception as e:
+            raise AioGraphiteSendException(f"Unable to connect to the provided server address "
+                                           f"{self._graphite_server_address} due to error : {e}")
 
     async def _disconnect(self) -> None:
         """

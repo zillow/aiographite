@@ -11,7 +11,7 @@ install_requires = []
 tests_require = []
 
 setup(name='aiographite',
-      version='0.1.9',
+      version='0.2.0',
       description='',
       long_description=open(README_PATH).read(),
       author='Yun Xu',
@@ -25,8 +25,9 @@ setup(name='aiographite',
           'Operating System :: POSIX :: Linux',
           'Topic :: System :: Software Distribution',
           'License :: OSI Approved :: MIT License',
-          'Programming Language :: Python',
-          'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9',
+          'Programming Language :: Python :: 3.10',
+          'Programming Language :: Python :: 3.11',
       ]
 )
